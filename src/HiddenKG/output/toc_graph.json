@@ -1,0 +1,4598 @@
+{
+  "nodes": [
+    {
+      "id": 1,
+      "name": "MATLAB数值类型",
+      "type": "数值类型",
+      "description": "MATLAB数值类型多样，主要包括整数、单精度浮点数和双精度浮点数"
+    },
+    {
+      "id": 2,
+      "name": "八种内置整数类型",
+      "type": "数据类型",
+      "description": "整数类型有八种内置，各有存储和范围差异"
+    },
+    {
+      "id": 3,
+      "name": "单精度浮点数",
+      "type": "数值类型",
+      "description": "单精度内存更少但精度较低"
+    },
+    {
+      "id": 4,
+      "name": "双精度浮点数",
+      "type": "数值类型",
+      "description": "默认存储为双精度，但可根据需求调整，以优化内存使用"
+    },
+    {
+      "id": 5,
+      "name": "复数",
+      "type": "数值类型",
+      "description": "使用“i”或“j”表示虚部"
+    },
+    {
+      "id": 6,
+      "name": "无穷大",
+      "type": "数值类型",
+      "description": "Inf则表示运算结果超出范围"
+    },
+    {
+      "id": 7,
+      "name": "非数值",
+      "type": "数值类型",
+      "description": "NaN表示非数值，实部为NaN，虚部为Inf，用于表示运算结果无效"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB中用于处理真假命题的关键数据类型"
+    },
+    {
+      "id": 9,
+      "name": "真假命题",
+      "type": "逻辑概念",
+      "description": "MATLAB中用于处理真假命题的关键数据类型"
+    },
+    {
+      "id": 10,
+      "name": "布尔值",
+      "type": "数据类型",
+      "description": "它不仅包含布尔值"
+    },
+    {
+      "id": 11,
+      "name": "关系运算",
+      "type": "运算类型",
+      "description": "MATLAB支持关系和逻辑运算"
+    },
+    {
+      "id": 12,
+      "name": "逻辑运算符",
+      "type": "运算类型",
+      "description": "MATLAB支持关系和逻辑运算"
+    },
+    {
+      "id": 13,
+      "name": "表2-6",
+      "type": "表格",
+      "description": "表2-6和表2-7所示"
+    },
+    {
+      "id": 14,
+      "name": "表2-7",
+      "type": "表格",
+      "description": "表2-6和表2-7所示"
+    },
+    {
+      "id": 15,
+      "name": "赋值",
+      "type": "操作符",
+      "description": "“=”用于赋值"
+    },
+    {
+      "id": 16,
+      "name": "比较",
+      "type": "操作符",
+      "description": "“==”用于比较"
+    },
+    {
+      "id": 17,
+      "name": "异或运算",
+      "type": "运算类型",
+      "description": "异或运算（xor）"
+    },
+    {
+      "id": 18,
+      "name": "any函数",
+      "type": "函数",
+      "description": "判断向量是否全零的any函数"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "字符串"
+    },
+    {
+      "id": 20,
+      "name": "行向量",
+      "type": "数据结构",
+      "description": "行向量"
+    },
+    {
+      "id": 21,
+      "name": "字符矩阵",
+      "type": "数据结构",
+      "description": "字符矩阵"
+    },
+    {
+      "id": 22,
+      "name": "ASCII码",
+      "type": "编码方式",
+      "description": "ASCII码"
+    },
+    {
+      "id": 23,
+      "name": "数组操作",
+      "type": "操作方法",
+      "description": "数组操作"
+    },
+    {
+      "id": 24,
+      "name": "绝对值",
+      "type": "数学运算",
+      "description": "取绝对值"
+    },
+    {
+      "id": 25,
+      "name": "连接操作",
+      "type": "操作方法",
+      "description": "连接操作"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 26,
+      "name": "直接调用法",
+      "type": "函数调用方法",
+      "description": "直接调用法"
+    },
+    {
+      "id": 27,
+      "name": "间接调用法",
+      "type": "函数调用方法",
+      "description": "间接调用法"
+    },
+    {
+      "id": 28,
+      "name": "子函数",
+      "type": "函数类型",
+      "description": "子函数"
+    },
+    {
+      "id": 29,
+      "name": "M文件",
+      "type": "文件类型",
+      "description": "M文件"
+    },
+    {
+      "id": 30,
+      "name": "主函数",
+      "type": "函数类型",
+      "description": "主函数"
+    },
+    {
+      "id": 31,
+      "name": "函数句柄",
+      "type": "程序元素",
+      "description": "函数句柄"
+    },
+    {
+      "id": 32,
+      "name": "操作符 @",
+      "type": "操作符",
+      "description": "操作符 @"
+    },
+    {
+      "id": 33,
+      "name": "函数名",
+      "type": "程序元素",
+      "description": "函数名"
+    },
+    {
+      "id": 34,
+      "name": "函数句柄操作函数",
+      "type": "函数类型",
+      "description": "函数句柄操作函数"
+    },
+    {
+      "id": 35,
+      "name": "表2-9",
+      "type": "表格",
+      "description": "表2-9"
+    },
+    {
+      "id": 36,
+      "name": "MATLAB结构体",
+      "type": "编程语言特性",
+      "description": "MATLAB中的结构体"
+    },
+    {
+      "id": 37,
+      "name": "C语言结构体",
+      "type": "编程语言特性",
+      "description": "类似于C语言中的结构体"
+    },
+    {
+      "id": 38,
+      "name": "结构体字段",
+      "type": "数据结构组成部分",
+      "description": "结构体通过其字段来封装多个相关联的数据"
+    },
+    {
+      "id": 39,
+      "name": "结构体student",
+      "type": "数据结构",
+      "description": "结构体student包含姓名（字符串）、年级（浮点数）、科目（字符串数组）和成绩（数组）等不同类型的数据"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "姓名（字符串）"
+    },
+    {
+      "id": 40,
+      "name": "浮点数",
+      "type": "数据类型",
+      "description": "年级（浮点数）"
+    },
+    {
+      "id": 41,
+      "name": "字符串数组",
+      "type": "数据类型",
+      "description": "科目（字符串数组）"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据类型",
+      "description": "成绩（数组）"
+    },
+    {
+      "id": 43,
+      "name": "结构体名.字段名称",
+      "type": "编程方法",
+      "description": "直接通过赋值语句，使用“结构体名.字段名称”的形式进行字段赋值"
+    },
+    {
+      "id": 44,
+      "name": "struct函数",
+      "type": "编程函数",
+      "description": "利用`struct`函数"
+    },
+    {
+      "id": 45,
+      "name": "结构体数组",
+      "type": "数据结构",
+      "description": "struct函数可以创建具有任意字段和尺寸的结构体数组"
+    },
+    {
+      "id": 46,
+      "name": "圆括号索引",
+      "type": "编程操作",
+      "description": "通过圆括号索引可以创建不同尺寸的结构体数组"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 47,
+      "name": "数据类型",
+      "type": "数据类型",
+      "description": "数据类型"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据结构",
+      "description": "数组"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据结构",
+      "description": "矩阵"
+    },
+    {
+      "id": 49,
+      "name": "线性代数",
+      "type": "数学领域",
+      "description": "线性代数"
+    },
+    {
+      "id": 50,
+      "name": "元素间运算",
+      "type": "运算方式",
+      "description": "元素间运算"
+    },
+    {
+      "id": 51,
+      "name": "数值序列",
+      "type": "序列类型",
+      "description": "数值序列"
+    },
+    {
+      "id": 52,
+      "name": "预定义函数",
+      "type": "函数",
+      "description": "预定义函数"
+    },
+    {
+      "id": 53,
+      "name": "逻辑序列",
+      "type": "序列类型",
+      "description": "逻辑序列"
+    },
+    {
+      "id": 54,
+      "name": "空数组",
+      "type": "数据结构",
+      "description": "空数组"
+    },
+    {
+      "id": 55,
+      "name": "数值计算",
+      "type": "计算领域",
+      "description": "数值计算"
+    },
+    {
+      "id": 56,
+      "name": "单元数组",
+      "type": "数据结构",
+      "description": "单元数组"
+    },
+    {
+      "id": 57,
+      "name": "单元",
+      "type": "数据元素",
+      "description": "单元"
+    },
+    {
+      "id": 58,
+      "name": "数值",
+      "type": "数据类型",
+      "description": "数值"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "字符串"
+    },
+    {
+      "id": 59,
+      "name": "结构体",
+      "type": "数据类型",
+      "description": "结构体"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 60,
+      "name": "cell函数",
+      "type": "函数",
+      "description": "cell函数"
+    },
+    {
+      "id": 61,
+      "name": "单元外标识",
+      "type": "操作",
+      "description": "单元外标识"
+    },
+    {
+      "id": 62,
+      "name": "单元内地址",
+      "type": "操作",
+      "description": "单元内地址"
+    },
+    {
+      "id": 63,
+      "name": "C(m,n)",
+      "type": "访问方式",
+      "description": "C(m,n)"
+    },
+    {
+      "id": 64,
+      "name": "C{m,n}",
+      "type": "访问方式",
+      "description": "C{m,n}"
+    },
+    {
+      "id": 65,
+      "name": "reshape函数",
+      "type": "函数",
+      "description": "reshape函数"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 66,
+      "name": "map 容器",
+      "type": "数据结构",
+      "description": "map 容器"
+    },
+    {
+      "id": 67,
+      "name": "键 (key)",
+      "type": "数据结构属性",
+      "description": "键"
+    },
+    {
+      "id": 68,
+      "name": "值 (value)",
+      "type": "数据结构属性",
+      "description": "值"
+    },
+    {
+      "id": 69,
+      "name": "容器包",
+      "type": "软件包",
+      "description": "容器包"
+    },
+    {
+      "id": 70,
+      "name": "keys 函数",
+      "type": "函数",
+      "description": "keys 函数"
+    },
+    {
+      "id": 71,
+      "name": "values 函数",
+      "type": "函数",
+      "description": "values 函数"
+    },
+    {
+      "id": 72,
+      "name": "remove 函数",
+      "type": "函数",
+      "description": "remove 函数"
+    },
+    {
+      "id": 73,
+      "name": "字符串键名",
+      "type": "编程规范",
+      "description": "字符串键名"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "F=ma"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数学概念",
+      "description": "矩阵"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据结构",
+      "description": "数组"
+    },
+    {
+      "id": 20,
+      "name": "行向量",
+      "type": "向量",
+      "description": "行向量"
+    },
+    {
+      "id": 75,
+      "name": "列向量",
+      "type": "向量",
+      "description": "列向量"
+    },
+    {
+      "id": 76,
+      "name": "方程组",
+      "type": "数学概念",
+      "description": "方程组"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数学结构",
+      "description": "矩阵的构造方式"
+    },
+    {
+      "id": 77,
+      "name": "方括号",
+      "type": "符号",
+      "description": "通过方括号“[]”定义矩阵元素"
+    },
+    {
+      "id": 78,
+      "name": "空格",
+      "type": "符号",
+      "description": "使用空格或逗号分隔元素"
+    },
+    {
+      "id": 79,
+      "name": "逗号",
+      "type": "符号",
+      "description": "使用空格或逗号分隔元素"
+    },
+    {
+      "id": 80,
+      "name": "分号",
+      "type": "符号",
+      "description": "行之间用分号“;”分隔行"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "MATLAB提供的特殊矩阵构造函数"
+    },
+    {
+      "id": 81,
+      "name": "表2-12",
+      "type": "表格",
+      "description": "MATLAB提供的特殊矩阵构造函数"
+    },
+    {
+      "id": 82,
+      "name": "向量",
+      "type": "数学结构",
+      "description": "向量是指m=1或n=1的矩阵"
+    },
+    {
+      "id": 83,
+      "name": "标量",
+      "type": "数学结构",
+      "description": "标量则是m=n=1的矩阵，即单个实数或复数"
+    },
+    {
+      "id": 84,
+      "name": "实数",
+      "type": "数学概念",
+      "description": "单个实数或复数"
+    },
+    {
+      "id": 5,
+      "name": "复数",
+      "type": "数学概念",
+      "description": "单个实数或复数"
+    },
+    {
+      "id": 85,
+      "name": "空矩阵",
+      "type": "数学结构",
+      "description": "空矩阵则指m=n=0、m=0或n=0的矩阵，不包含任何元素，不占用存储空间"
+    },
+    {
+      "id": 86,
+      "name": "矩阵旋转",
+      "type": "矩阵操作",
+      "description": "矩阵旋转"
+    },
+    {
+      "id": 87,
+      "name": "维度改变",
+      "type": "矩阵操作",
+      "description": "改变矩阵维度"
+    },
+    {
+      "id": 88,
+      "name": "矩阵元素删除",
+      "type": "矩阵操作",
+      "description": "删除矩阵元素"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "MATLAB"
+    },
+    {
+      "id": 89,
+      "name": "矩阵旋转与维度改变",
+      "type": "矩阵操作",
+      "description": "矩阵旋转与维度改变"
+    },
+    {
+      "id": 90,
+      "name": "矩阵运算",
+      "type": "计算任务",
+      "description": "矩阵运算"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 91,
+      "name": "矩阵元素",
+      "type": "数据结构",
+      "description": "矩阵元素"
+    },
+    {
+      "id": 92,
+      "name": "双下标索引",
+      "type": "索引方法",
+      "description": "双下标索引"
+    },
+    {
+      "id": 93,
+      "name": "单下标索引",
+      "type": "索引方法",
+      "description": "单下标索引"
+    },
+    {
+      "id": 94,
+      "name": "列元素优先",
+      "type": "索引原则",
+      "description": "列元素优先"
+    },
+    {
+      "id": 95,
+      "name": "内部函数",
+      "type": "函数",
+      "description": "内部函数"
+    },
+    {
+      "id": 96,
+      "name": "IND2SINGLE",
+      "type": "函数",
+      "description": "IND = ind2single(A, i, j)"
+    },
+    {
+      "id": 97,
+      "name": "SINGLE2IND",
+      "type": "函数",
+      "description": "i = single2ind(A, i, j)"
+    },
+    {
+      "id": 98,
+      "name": "冒号索引",
+      "type": "索引方法",
+      "description": "A(1:k,j)"
+    },
+    {
+      "id": 99,
+      "name": "连续元素",
+      "type": "数据结构",
+      "description": "连续元素"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据结构",
+      "description": "矩阵"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 100,
+      "name": "测试函数",
+      "type": "函数",
+      "description": "测试函数"
+    },
+    {
+      "id": 101,
+      "name": "shape信息查询函数",
+      "type": "函数",
+      "description": "shape信息查询函数"
+    },
+    {
+      "id": 102,
+      "name": "ndims函数",
+      "type": "函数",
+      "description": "ndims函数"
+    },
+    {
+      "id": 103,
+      "name": "whos命令",
+      "type": "命令",
+      "description": "whos命令"
+    },
+    {
+      "id": 104,
+      "name": "zeros函数",
+      "type": "函数",
+      "description": "zeros函数"
+    },
+    {
+      "id": 105,
+      "name": "eye函数",
+      "type": "函数",
+      "description": "eye函数"
+    },
+    {
+      "id": 106,
+      "name": "内存占用",
+      "type": "概念",
+      "description": "内存占用"
+    },
+    {
+      "id": 58,
+      "name": "数值",
+      "type": "数据类型",
+      "description": "数值"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "字符串"
+    },
+    {
+      "id": 107,
+      "name": "元胞",
+      "type": "数据类型",
+      "description": "元胞"
+    },
+    {
+      "id": 108,
+      "name": "MATLAB矩阵操作",
+      "type": "教材课程",
+      "description": "MATLAB矩阵操作的核心内容"
+    },
+    {
+      "id": 109,
+      "name": "矩阵存储",
+      "type": "物理概念",
+      "description": "矩阵在MATLAB中的存储机制——按列优先排列的线性向量特性"
+    },
+    {
+      "id": 110,
+      "name": "矩阵下标寻址",
+      "type": "寻址方法",
+      "description": "矩阵下标寻址"
+    },
+    {
+      "id": 111,
+      "name": "线性寻址",
+      "type": "寻址方法",
+      "description": "线性寻址"
+    },
+    {
+      "id": 112,
+      "name": "矩阵元素赋值",
+      "type": "矩阵操作",
+      "description": "矩阵元素的赋值和扩展删除"
+    },
+    {
+      "id": 113,
+      "name": "矩阵合并操作",
+      "type": "矩阵操作",
+      "description": "矩阵合并操作"
+    },
+    {
+      "id": 114,
+      "name": "cat函数",
+      "type": "函数",
+      "description": "使用`cat`函数"
+    },
+    {
+      "id": 115,
+      "name": "维度一致性",
+      "type": "物理概念",
+      "description": "维度一致性"
+    },
+    {
+      "id": 116,
+      "name": "残缺矩阵",
+      "type": "矩阵问题",
+      "description": "由于输入矩阵维度不一致导致的残缺矩阵问题"
+    },
+    {
+      "id": 117,
+      "name": "blkdiag函数",
+      "type": "函数",
+      "description": "介绍了`blkdiag`函数"
+    },
+    {
+      "id": 118,
+      "name": "块对角化矩阵",
+      "type": "矩阵类型",
+      "description": "用于构建块对角化矩阵"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB作为一种强大的数值计算环境"
+    },
+    {
+      "id": 119,
+      "name": "算术运算符",
+      "type": "数学运算",
+      "description": "提供了丰富的算术运算符用于进行各种数学运算"
+    },
+    {
+      "id": 120,
+      "name": "加法",
+      "type": "数学运算",
+      "description": "包括加、减、乘、除"
+    },
+    {
+      "id": 121,
+      "name": "减法",
+      "type": "数学运算",
+      "description": "包括加、减、乘、除"
+    },
+    {
+      "id": 122,
+      "name": "乘法",
+      "type": "数学运算",
+      "description": "包括加、减、乘、除"
+    },
+    {
+      "id": 123,
+      "name": "除法",
+      "type": "数学运算",
+      "description": "包括加、减、乘、除"
+    },
+    {
+      "id": 124,
+      "name": "点乘",
+      "type": "数学运算",
+      "description": "更高级的运算如点乘和点除"
+    },
+    {
+      "id": 125,
+      "name": "点除",
+      "type": "数学运算",
+      "description": "更高级的运算如点乘和点除"
+    },
+    {
+      "id": 126,
+      "name": "运算函数",
+      "type": "数学运算",
+      "description": "大量的运算函数，用于执行更复杂的数学操作"
+    },
+    {
+      "id": 55,
+      "name": "数值计算",
+      "type": "计算方法",
+      "description": "方便地进行数值计算"
+    },
+    {
+      "id": 127,
+      "name": "数据分析",
+      "type": "数据处理",
+      "description": "为MATLAB的实际应用奠定基础"
+    },
+    {
+      "id": 128,
+      "name": "关系运算符",
+      "type": "数学运算符",
+      "description": "用于比较不同数据类型之间的关系"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 58,
+      "name": "数值",
+      "type": "数据类型",
+      "description": "数值"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据类型",
+      "description": "数组"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据类型",
+      "description": "矩阵"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "字符串"
+    },
+    {
+      "id": 129,
+      "name": "eps",
+      "type": "特殊值",
+      "description": "MATLAB中常使用特殊值eps来代替数组中的零"
+    },
+    {
+      "id": 130,
+      "name": "逻辑判断",
+      "type": "编程操作",
+      "description": "进行逻辑判断"
+    },
+    {
+      "id": 131,
+      "name": "数据筛选",
+      "type": "编程操作",
+      "description": "进行数据筛选"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 12,
+      "name": "逻辑运算符",
+      "type": "编程概念",
+      "description": "逻辑运算符"
+    },
+    {
+      "id": 132,
+      "name": "与运算符",
+      "type": "逻辑运算符",
+      "description": "与（A&B）"
+    },
+    {
+      "id": 133,
+      "name": "或运算符",
+      "type": "逻辑运算符",
+      "description": "或（A|B）"
+    },
+    {
+      "id": 134,
+      "name": "非运算符",
+      "type": "逻辑运算符",
+      "description": "非（~A）"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据结构",
+      "description": "矩阵"
+    },
+    {
+      "id": 58,
+      "name": "数值",
+      "type": "数据类型",
+      "description": "数值"
+    },
+    {
+      "id": 135,
+      "name": "逻辑函数",
+      "type": "编程函数",
+      "description": "逻辑函数"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程环境",
+      "description": "MATLAB"
+    },
+    {
+      "id": 136,
+      "name": "运算优先级",
+      "type": "数学概念",
+      "description": "运算优先级"
+    },
+    {
+      "id": 119,
+      "name": "算术运算符",
+      "type": "数学符号",
+      "description": "算术运算符"
+    },
+    {
+      "id": 128,
+      "name": "关系运算符",
+      "type": "数学符号",
+      "description": "关系运算符"
+    },
+    {
+      "id": 12,
+      "name": "逻辑运算符",
+      "type": "数学符号",
+      "description": "逻辑运算符"
+    },
+    {
+      "id": 137,
+      "name": "括号",
+      "type": "数学符号",
+      "description": "括号"
+    },
+    {
+      "id": 138,
+      "name": "表2-24",
+      "type": "表格",
+      "description": "表2-24"
+    },
+    {
+      "id": 139,
+      "name": "表达式",
+      "type": "数学表达式",
+      "description": "表达式"
+    },
+    {
+      "id": 140,
+      "name": "编程",
+      "type": "编程范式",
+      "description": "编程"
+    },
+    {
+      "id": 141,
+      "name": "直接赋值",
+      "type": "编程构造方式",
+      "description": "直接赋值"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 142,
+      "name": "strvcat函数",
+      "type": "函数",
+      "description": "strvcat函数"
+    },
+    {
+      "id": 143,
+      "name": "char函数",
+      "type": "函数",
+      "description": "char函数"
+    },
+    {
+      "id": 19,
+      "name": "字符串",
+      "type": "数据类型",
+      "description": "字符串"
+    },
+    {
+      "id": 144,
+      "name": "纵向连接",
+      "type": "字符串操作",
+      "description": "纵向连接"
+    },
+    {
+      "id": 145,
+      "name": "字符串比较",
+      "type": "编程技术",
+      "description": "字符串比较"
+    },
+    {
+      "id": 128,
+      "name": "关系运算符",
+      "type": "编程语法",
+      "description": "关系运算符"
+    },
+    {
+      "id": 146,
+      "name": "strcmp 函数",
+      "type": "函数",
+      "description": "strcmp 函数"
+    },
+    {
+      "id": 147,
+      "name": "字符串长度一致性",
+      "type": "编程特性",
+      "description": "字符串长度一致性"
+    },
+    {
+      "id": 148,
+      "name": "字符串处理",
+      "type": "编程范式",
+      "description": "字符串处理"
+    },
+    {
+      "id": 149,
+      "name": "findstr函数",
+      "type": "字符串处理函数",
+      "description": "findstr函数"
+    },
+    {
+      "id": 150,
+      "name": "strrep函数",
+      "type": "字符串处理函数",
+      "description": "strrep函数"
+    },
+    {
+      "id": 151,
+      "name": "字符串矩阵",
+      "type": "数据结构",
+      "description": "字符串矩阵"
+    },
+    {
+      "id": 152,
+      "name": "循环索引",
+      "type": "编程技巧",
+      "description": "循环索引"
+    },
+    {
+      "id": 153,
+      "name": "字符串类型",
+      "type": "数据类型",
+      "description": "字符串类型"
+    },
+    {
+      "id": 154,
+      "name": "数值类型",
+      "type": "数据类型",
+      "description": "数值类型"
+    },
+    {
+      "id": 155,
+      "name": "转换函数",
+      "type": "函数",
+      "description": "字符串类型与数值类型转换函数"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "MATLAB"
+    },
+    {
+      "id": 156,
+      "name": "文本处理",
+      "type": "领域",
+      "description": "文本处理"
+    },
+    {
+      "id": 157,
+      "name": "数据可视化",
+      "type": "领域",
+      "description": "数据可视化"
+    },
+    {
+      "id": 158,
+      "name": "用户交互",
+      "type": "领域",
+      "description": "用户交互"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据结构",
+      "description": "数组"
+    },
+    {
+      "id": 77,
+      "name": "方括号",
+      "type": "语法元素",
+      "description": "方括号"
+    },
+    {
+      "id": 20,
+      "name": "行向量",
+      "type": "数组类型",
+      "description": "行向量"
+    },
+    {
+      "id": 75,
+      "name": "列向量",
+      "type": "数组类型",
+      "description": "列向量"
+    },
+    {
+      "id": 159,
+      "name": "访问操作符",
+      "type": "语法元素",
+      "description": "访问操作符"
+    },
+    {
+      "id": 160,
+      "name": "一维数组",
+      "type": "数组类型",
+      "description": "一维数组"
+    },
+    {
+      "id": 161,
+      "name": "冒号",
+      "type": "语法元素",
+      "description": "冒号"
+    },
+    {
+      "id": 162,
+      "name": "logspace()函数",
+      "type": "函数",
+      "description": "logspace()函数"
+    },
+    {
+      "id": 163,
+      "name": "对数间隔",
+      "type": "数学概念",
+      "description": "对数间隔"
+    },
+    {
+      "id": 164,
+      "name": "linspace()函数",
+      "type": "函数",
+      "description": "linspace()函数"
+    },
+    {
+      "id": 165,
+      "name": "线性间隔",
+      "type": "数学概念",
+      "description": "线性间隔"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 166,
+      "name": "库仑定律",
+      "type": "物理定律",
+      "description": "库仑定律"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 42,
+      "name": "数组",
+      "type": "数据结构",
+      "description": "数组"
+    },
+    {
+      "id": 167,
+      "name": "算术运算",
+      "type": "运算类型",
+      "description": "数组的算术运算"
+    },
+    {
+      "id": 168,
+      "name": "加减运算",
+      "type": "运算类型",
+      "description": "数组的加减运算"
+    },
+    {
+      "id": 169,
+      "name": "乘除运算",
+      "type": "运算类型",
+      "description": "数组的乘除运算"
+    },
+    {
+      "id": 170,
+      "name": "乘方运算",
+      "type": "运算类型",
+      "description": "乘方运算"
+    },
+    {
+      "id": 11,
+      "name": "关系运算",
+      "type": "运算类型",
+      "description": "数组的关系运算"
+    },
+    {
+      "id": 171,
+      "name": "逻辑运算",
+      "type": "运算类型",
+      "description": "数组的逻辑运算"
+    },
+    {
+      "id": 172,
+      "name": "与运算",
+      "type": "逻辑运算",
+      "description": "与运算"
+    },
+    {
+      "id": 173,
+      "name": "或运算",
+      "type": "逻辑运算",
+      "description": "或运算"
+    },
+    {
+      "id": 174,
+      "name": "非运算",
+      "type": "逻辑运算",
+      "description": "非运算"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB中"
+    },
+    {
+      "id": 175,
+      "name": "零矩阵",
+      "type": "矩阵类型",
+      "description": "零矩阵"
+    },
+    {
+      "id": 176,
+      "name": "单位矩阵",
+      "type": "矩阵类型",
+      "description": "单位矩阵"
+    },
+    {
+      "id": 177,
+      "name": "全1矩阵",
+      "type": "矩阵类型",
+      "description": "全1矩阵"
+    },
+    {
+      "id": 178,
+      "name": "希尔伯特矩阵",
+      "type": "矩阵类型",
+      "description": "希尔伯特矩阵"
+    },
+    {
+      "id": 179,
+      "name": "托普利兹矩阵",
+      "type": "矩阵类型",
+      "description": "托普利兹矩阵"
+    },
+    {
+      "id": 180,
+      "name": "随机矩阵",
+      "type": "矩阵类型",
+      "description": "随机矩阵"
+    },
+    {
+      "id": 181,
+      "name": "魔方矩阵",
+      "type": "矩阵类型",
+      "description": "魔方矩阵"
+    },
+    {
+      "id": 182,
+      "name": "帕斯卡矩阵",
+      "type": "矩阵类型",
+      "description": "帕斯卡矩阵"
+    },
+    {
+      "id": 183,
+      "name": "范德蒙矩阵",
+      "type": "矩阵类型",
+      "description": "范德蒙矩阵"
+    },
+    {
+      "id": 184,
+      "name": "rand()函数",
+      "type": "函数",
+      "description": "rand()函数"
+    },
+    {
+      "id": 185,
+      "name": "randn()函数",
+      "type": "函数",
+      "description": "randn()函数"
+    },
+    {
+      "id": 186,
+      "name": "magic()函数",
+      "type": "函数",
+      "description": "magic()函数"
+    },
+    {
+      "id": 187,
+      "name": "vander()函数",
+      "type": "函数",
+      "description": "vander()函数"
+    },
+    {
+      "id": 90,
+      "name": "矩阵运算",
+      "type": "运算",
+      "description": "矩阵运算"
+    },
+    {
+      "id": 188,
+      "name": "矩阵合并",
+      "type": "运算",
+      "description": "矩阵合并"
+    },
+    {
+      "id": 189,
+      "name": "cat()函数",
+      "type": "函数",
+      "description": "cat()函数"
+    },
+    {
+      "id": 190,
+      "name": "矩阵形状",
+      "type": "属性",
+      "description": "矩阵的形状"
+    },
+    {
+      "id": 191,
+      "name": "水平方向合并",
+      "type": "运算",
+      "description": "水平方向合并"
+    },
+    {
+      "id": 192,
+      "name": "垂直方向合并",
+      "type": "运算",
+      "description": "垂直方向合并"
+    },
+    {
+      "id": 85,
+      "name": "空矩阵",
+      "type": "数据结构",
+      "description": "空矩阵"
+    },
+    {
+      "id": 193,
+      "name": "矩阵重构",
+      "type": "数学概念",
+      "description": "矩阵重构"
+    },
+    {
+      "id": 194,
+      "name": "转置",
+      "type": "线性代数运算",
+      "description": "转置操作会将矩阵的行变为列"
+    },
+    {
+      "id": 195,
+      "name": "共轭转置",
+      "type": "线性代数运算",
+      "description": "共轭转置则对矩阵的元素进行共轭复数运算"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 49,
+      "name": "线性代数",
+      "type": "数学分支",
+      "description": "在线性代数书籍中"
+    },
+    {
+      "id": 196,
+      "name": "方阵",
+      "type": "矩阵类型",
+      "description": "方阵"
+    },
+    {
+      "id": 197,
+      "name": "矩阵维度",
+      "type": "数学概念",
+      "description": "从而改变矩阵的维度"
+    },
+    {
+      "id": 198,
+      "name": "复数元素",
+      "type": "数学概念",
+      "description": "每个复数元素与其共轭对应"
+    },
+    {
+      "id": 199,
+      "name": "实数矩阵",
+      "type": "矩阵类型",
+      "description": "对于实数矩阵"
+    },
+    {
+      "id": 200,
+      "name": "矩阵加法",
+      "type": "运算",
+      "description": "矩阵加法和减法"
+    },
+    {
+      "id": 201,
+      "name": "矩阵减法",
+      "type": "运算",
+      "description": "矩阵加法和减法"
+    },
+    {
+      "id": 49,
+      "name": "线性代数",
+      "type": "数学分支",
+      "description": "线性代数中的基本运算"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数学对象",
+      "description": "参与运算的矩阵"
+    },
+    {
+      "id": 202,
+      "name": "维度",
+      "type": "数学属性",
+      "description": "矩阵的维度一致"
+    },
+    {
+      "id": 83,
+      "name": "标量",
+      "type": "数学对象",
+      "description": "其中至少有一个矩阵为标量"
+    },
+    {
+      "id": 203,
+      "name": "元素",
+      "type": "数学对象",
+      "description": "C 的每个元素 Cmn"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 204,
+      "name": "交换律",
+      "type": "数学性质",
+      "description": "矩阵加法遵循交换律"
+    },
+    {
+      "id": 205,
+      "name": "结合律",
+      "type": "数学性质",
+      "description": "矩阵加法遵循结合律"
+    },
+    {
+      "id": 206,
+      "name": "零元律",
+      "type": "数学性质",
+      "description": "矩阵加法遵循零元律"
+    },
+    {
+      "id": 207,
+      "name": "负元律",
+      "type": "数学性质",
+      "description": "矩阵加法遵循负元律"
+    },
+    {
+      "id": 208,
+      "name": "MATLAB矩阵运算",
+      "type": "课程",
+      "description": "MATLAB矩阵运算"
+    },
+    {
+      "id": 209,
+      "name": "数与矩阵的乘法",
+      "type": "运算规则",
+      "description": "数与矩阵的乘法"
+    },
+    {
+      "id": 210,
+      "name": "矩阵与矩阵的乘法",
+      "type": "运算规则",
+      "description": "矩阵与矩阵的乘法"
+    },
+    {
+      "id": 205,
+      "name": "结合律",
+      "type": "运算定律",
+      "description": "结合律"
+    },
+    {
+      "id": 211,
+      "name": "分配律",
+      "type": "运算定律",
+      "description": "分配律"
+    },
+    {
+      "id": 176,
+      "name": "单位矩阵",
+      "type": "矩阵",
+      "description": "单位矩阵"
+    },
+    {
+      "id": 212,
+      "name": "矩阵除法",
+      "type": "运算",
+      "description": "矩阵除法"
+    },
+    {
+      "id": 213,
+      "name": "矩阵乘法",
+      "type": "运算",
+      "description": "矩阵乘法运算"
+    },
+    {
+      "id": 214,
+      "name": "逆矩阵",
+      "type": "矩阵属性",
+      "description": "逆矩阵"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 202,
+      "name": "维度",
+      "type": "数学属性",
+      "description": "维度"
+    },
+    {
+      "id": 215,
+      "name": "矩阵幂运算",
+      "type": "运算",
+      "description": "对方阵进行重复相乘的操作，即 A^n (n为正整数)"
+    },
+    {
+      "id": 196,
+      "name": "方阵",
+      "type": "矩阵类型",
+      "description": "A 为方阵"
+    },
+    {
+      "id": 213,
+      "name": "矩阵乘法",
+      "type": "运算",
+      "description": "矩阵的重复应用"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "利用“^”符号即可实现矩阵的幂运算"
+    },
+    {
+      "id": 216,
+      "name": "矩阵代数",
+      "type": "领域",
+      "description": "矩阵幂运算在矩阵代数等领域具有广泛应用"
+    },
+    {
+      "id": 217,
+      "name": "线性变换",
+      "type": "领域",
+      "description": "矩阵幂运算在矩阵代数、线性变换以及数值计算等领域具有广泛应用"
+    },
+    {
+      "id": 55,
+      "name": "数值计算",
+      "type": "领域",
+      "description": "矩阵幂运算在矩阵代数、线性变换以及数值计算等领域具有广泛应用"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "例3-29展示了方阵幂运算的具体应用"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 218,
+      "name": "find()函数",
+      "type": "函数",
+      "description": "find()函数"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据结构",
+      "description": "矩阵"
+    },
+    {
+      "id": 219,
+      "name": "非零元素",
+      "type": "数据属性",
+      "description": "非零元素"
+    },
+    {
+      "id": 220,
+      "name": "索引位置",
+      "type": "概念",
+      "description": "索引位置"
+    },
+    {
+      "id": 221,
+      "name": "行索引",
+      "type": "概念",
+      "description": "行索引"
+    },
+    {
+      "id": 222,
+      "name": "列索引",
+      "type": "概念",
+      "description": "列索引"
+    },
+    {
+      "id": 223,
+      "name": "双下标",
+      "type": "概念",
+      "description": "双下标"
+    },
+    {
+      "id": 224,
+      "name": "例3-30",
+      "type": "案例",
+      "description": "例3-30"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 225,
+      "name": "sort()函数",
+      "type": "函数",
+      "description": "sort()函数"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数据结构",
+      "description": "矩阵"
+    },
+    {
+      "id": 82,
+      "name": "向量",
+      "type": "数据结构",
+      "description": "向量"
+    },
+    {
+      "id": 226,
+      "name": "升序排序",
+      "type": "排序方式",
+      "description": "升序排序"
+    },
+    {
+      "id": 227,
+      "name": "降序排序",
+      "type": "排序方式",
+      "description": "降序排序"
+    },
+    {
+      "id": 202,
+      "name": "维度",
+      "type": "参数",
+      "description": "维度"
+    },
+    {
+      "id": 228,
+      "name": "列排序",
+      "type": "排序方式",
+      "description": "按列排序"
+    },
+    {
+      "id": 229,
+      "name": "行排序",
+      "type": "排序方式",
+      "description": "按行排序"
+    },
+    {
+      "id": 230,
+      "name": "数据处理",
+      "type": "应用领域",
+      "description": "数据处理"
+    },
+    {
+      "id": 127,
+      "name": "数据分析",
+      "type": "应用领域",
+      "description": "数据分析"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 231,
+      "name": "sum()函数",
+      "type": "函数",
+      "description": "sum()函数"
+    },
+    {
+      "id": 232,
+      "name": "cumsum()函数",
+      "type": "函数",
+      "description": "cumsum()函数"
+    },
+    {
+      "id": 91,
+      "name": "矩阵元素",
+      "type": "数学对象",
+      "description": "矩阵元素"
+    },
+    {
+      "id": 90,
+      "name": "矩阵运算",
+      "type": "运算范畴",
+      "description": "矩阵运算"
+    },
+    {
+      "id": 233,
+      "name": "列求和",
+      "type": "运算操作",
+      "description": "列求和"
+    },
+    {
+      "id": 234,
+      "name": "行求和",
+      "type": "运算操作",
+      "description": "行求和"
+    },
+    {
+      "id": 235,
+      "name": "累积和",
+      "type": "数学概念",
+      "description": "累积和"
+    },
+    {
+      "id": 236,
+      "name": "函数嵌套",
+      "type": "编程概念",
+      "description": "函数嵌套"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "编程语言",
+      "description": "MATLAB"
+    },
+    {
+      "id": 237,
+      "name": "prod()函数",
+      "type": "函数",
+      "description": "prod()函数"
+    },
+    {
+      "id": 238,
+      "name": "cumprod()函数",
+      "type": "函数",
+      "description": "cumprod()函数"
+    },
+    {
+      "id": 239,
+      "name": "矩阵元素积",
+      "type": "数学概念",
+      "description": "矩阵元素积"
+    },
+    {
+      "id": 240,
+      "name": "列元素积",
+      "type": "数学运算",
+      "description": "列元素积"
+    },
+    {
+      "id": 241,
+      "name": "行元素积",
+      "type": "数学运算",
+      "description": "行元素积"
+    },
+    {
+      "id": 242,
+      "name": "累积积",
+      "type": "数学概念",
+      "description": "累积积"
+    },
+    {
+      "id": 243,
+      "name": "示例3-34",
+      "type": "教材示例",
+      "description": "示例3-34"
+    },
+    {
+      "id": 244,
+      "name": "diff()函数",
+      "type": "函数",
+      "description": "MATLAB中的`diff()`函数"
+    },
+    {
+      "id": 91,
+      "name": "矩阵元素",
+      "type": "数据元素",
+      "description": "矩阵元素的差分"
+    },
+    {
+      "id": 245,
+      "name": "数值分析",
+      "type": "数值分析方法",
+      "description": "进行数值分析"
+    },
+    {
+      "id": 246,
+      "name": "信号处理",
+      "type": "信号处理方法",
+      "description": "信号处理"
+    },
+    {
+      "id": 247,
+      "name": "数据序列",
+      "type": "数据结构",
+      "description": "数据序列"
+    },
+    {
+      "id": 248,
+      "name": "变化趋势",
+      "type": "数据特征",
+      "description": "变化趋势"
+    },
+    {
+      "id": 249,
+      "name": "一阶差分",
+      "type": "差分阶数",
+      "description": "一阶差分"
+    },
+    {
+      "id": 250,
+      "name": "更高阶的差分",
+      "type": "差分阶数",
+      "description": "更高阶的差分"
+    },
+    {
+      "id": 251,
+      "name": "dim参数",
+      "type": "参数",
+      "description": "dim参数"
+    },
+    {
+      "id": 252,
+      "name": "列差分",
+      "type": "差分方式",
+      "description": "列差分"
+    },
+    {
+      "id": 253,
+      "name": "行差分",
+      "type": "差分方式",
+      "description": "行差分"
+    },
+    {
+      "id": 254,
+      "name": "例3-35",
+      "type": "示例",
+      "description": "例3-35"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 255,
+      "name": "MATLAB矩阵分析工具箱",
+      "type": "软件工具",
+      "description": "MATLAB矩阵分析工具箱"
+    },
+    {
+      "id": 82,
+      "name": "向量",
+      "type": "数学对象",
+      "description": "向量和矩阵的范数计算"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数学对象",
+      "description": "向量和矩阵的范数计算"
+    },
+    {
+      "id": 256,
+      "name": "范数",
+      "type": "数学概念",
+      "description": "向量和矩阵的范数计算"
+    },
+    {
+      "id": 257,
+      "name": "1阶范数",
+      "type": "数学概念",
+      "description": "1、2、∞阶范数以及最大奇异值与2阶范数的关系"
+    },
+    {
+      "id": 258,
+      "name": "2阶范数",
+      "type": "数学概念",
+      "description": "1、2、∞阶范数以及最大奇异值与2阶范数的关系"
+    },
+    {
+      "id": 259,
+      "name": "∞阶范数",
+      "type": "数学概念",
+      "description": "1、2、∞阶范数以及最大奇异值与2阶范数的关系"
+    },
+    {
+      "id": 260,
+      "name": "最大奇异值",
+      "type": "数学概念",
+      "description": "1、2、∞阶范数以及最大奇异值与2阶范数的关系"
+    },
+    {
+      "id": 261,
+      "name": "秩",
+      "type": "数学概念",
+      "description": "矩阵的秩、行列式、迹以及化零矩阵的计算方法"
+    },
+    {
+      "id": 262,
+      "name": "行列式",
+      "type": "数学概念",
+      "description": "矩阵的秩、行列式、迹以及化零矩阵的计算方法"
+    },
+    {
+      "id": 263,
+      "name": "迹",
+      "type": "数学概念",
+      "description": "矩阵的秩、行列式、迹以及化零矩阵的计算方法"
+    },
+    {
+      "id": 264,
+      "name": "化零矩阵",
+      "type": "数学概念",
+      "description": "矩阵的秩、行列式、迹以及化零矩阵的计算方法"
+    },
+    {
+      "id": 265,
+      "name": "正交空间",
+      "type": "数学概念",
+      "description": "矩阵的正交空间"
+    },
+    {
+      "id": 266,
+      "name": "约化行阶梯形式",
+      "type": "数学概念",
+      "description": "矩阵的约化行阶梯形式"
+    },
+    {
+      "id": 267,
+      "name": "orth()",
+      "type": "函数",
+      "description": "用于求解矩阵的正交空间"
+    },
+    {
+      "id": 268,
+      "name": "rref()",
+      "type": "函数",
+      "description": "用于计算矩阵的约化行阶梯形式"
+    },
+    {
+      "id": 269,
+      "name": "subspace()",
+      "type": "函数",
+      "description": "计算矩阵间的夹角来量化"
+    },
+    {
+      "id": 270,
+      "name": "线性相关性",
+      "type": "数学概念",
+      "description": "返回的约化形式与矩阵线性相关的程度"
+    },
+    {
+      "id": 271,
+      "name": "矩阵分析",
+      "type": "领域",
+      "description": "矩阵分析、线性代数运算和理解矩阵结构中具有重要意义"
+    },
+    {
+      "id": 272,
+      "name": "线性代数运算",
+      "type": "领域",
+      "description": "矩阵分析、线性代数运算和理解矩阵结构中具有重要意义"
+    },
+    {
+      "id": 273,
+      "name": "矩阵分解",
+      "type": "矩阵分解方法",
+      "description": "矩阵分解"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件平台",
+      "description": "MATLAB"
+    },
+    {
+      "id": 274,
+      "name": "Cholesky分解",
+      "type": "矩阵分解方法",
+      "description": "Cholesky分解"
+    },
+    {
+      "id": 275,
+      "name": "LU分解",
+      "type": "矩阵分解方法",
+      "description": "LU分解"
+    },
+    {
+      "id": 276,
+      "name": "QR分解",
+      "type": "矩阵分解方法",
+      "description": "QR分解"
+    },
+    {
+      "id": 277,
+      "name": "置换矩阵",
+      "type": "数学工具",
+      "description": "置换矩阵"
+    },
+    {
+      "id": 278,
+      "name": "矩阵B",
+      "type": "矩阵",
+      "description": "矩阵B"
+    },
+    {
+      "id": 279,
+      "name": "舒尔分解",
+      "type": "矩阵分解方法",
+      "description": "舒尔分解"
+    },
+    {
+      "id": 280,
+      "name": "缺陷矩阵",
+      "type": "矩阵概念",
+      "description": "缺陷矩阵"
+    },
+    {
+      "id": 281,
+      "name": "chol()函数",
+      "type": "MATLAB函数",
+      "description": "chol()函数"
+    },
+    {
+      "id": 282,
+      "name": "lu()函数",
+      "type": "MATLAB函数",
+      "description": "lu()函数"
+    },
+    {
+      "id": 283,
+      "name": "qr()函数",
+      "type": "MATLAB函数",
+      "description": "qr()函数"
+    },
+    {
+      "id": 284,
+      "name": "schur()函数",
+      "type": "MATLAB函数",
+      "description": "schur()函数"
+    },
+    {
+      "id": 285,
+      "name": "特征值",
+      "type": "数学概念",
+      "description": "求解方程Ax=λx的解"
+    },
+    {
+      "id": 286,
+      "name": "特征向量",
+      "type": "数学概念",
+      "description": "矩阵A的解"
+    },
+    {
+      "id": 49,
+      "name": "线性代数",
+      "type": "教材课程",
+      "description": "线性代数中的特征值和特征向量概念"
+    },
+    {
+      "id": 48,
+      "name": "矩阵",
+      "type": "数学对象",
+      "description": "A为n×n矩阵"
+    },
+    {
+      "id": 287,
+      "name": "特征值分解",
+      "type": "数学概念",
+      "description": "将矩阵A表示为VDV⁻¹的形式"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件工具",
+      "description": "MATLAB中的计算方法"
+    },
+    {
+      "id": 288,
+      "name": "eig函数",
+      "type": "函数",
+      "description": "`eig`函数通常需要进行相似变换以获得更好的条件特征值"
+    },
+    {
+      "id": 289,
+      "name": "balance函数",
+      "type": "函数",
+      "description": "用于寻找平衡矩阵"
+    },
+    {
+      "id": 290,
+      "name": "eigs函数",
+      "type": "函数",
+      "description": "用于计算部分特征值"
+    },
+    {
+      "id": 291,
+      "name": "condeig函数",
+      "type": "函数",
+      "description": "用于计算特征值条件数"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "MATLAB采用一种高效的存储策略"
+    },
+    {
+      "id": 292,
+      "name": "稀疏矩阵",
+      "type": "数据结构",
+      "description": "对于稀疏矩阵"
+    },
+    {
+      "id": 293,
+      "name": "存储策略",
+      "type": "算法",
+      "description": "MATLAB采用一种高效的存储策略"
+    },
+    {
+      "id": 219,
+      "name": "非零元素",
+      "type": "数据元素",
+      "description": "仅存储非零元素及其对应的行列位置信息"
+    },
+    {
+      "id": 294,
+      "name": "行列位置信息",
+      "type": "数据元素",
+      "description": "仅存储非零元素及其对应的行列位置信息"
+    },
+    {
+      "id": 295,
+      "name": "完全存储方式",
+      "type": "存储方式",
+      "description": "完全存储方式将矩阵所有元素列出"
+    },
+    {
+      "id": 296,
+      "name": "稀疏存储方式",
+      "type": "存储方式",
+      "description": "稀疏存储方式则只记录非零元素及其位置"
+    },
+    {
+      "id": 297,
+      "name": "行和列",
+      "type": "索引",
+      "description": "括号内表示元素的行和列"
+    },
+    {
+      "id": 298,
+      "name": "位置为索引",
+      "type": "索引方式",
+      "description": "这种以位置为索引的方式"
+    },
+    {
+      "id": 8,
+      "name": "MATLAB",
+      "type": "软件",
+      "description": "MATLAB"
+    },
+    {
+      "id": 292,
+      "name": "稀疏矩阵",
+      "type": "数据结构",
+      "description": "稀疏矩阵"
+    },
+    {
+      "id": 299,
+      "name": "sparse函数",
+      "type": "函数",
+      "description": "sparse函数"
+    },
+    {
+      "id": 300,
+      "name": "full()函数",
+      "type": "函数",
+      "description": "full()函数"
+    },
+    {
+      "id": 301,
+      "name": "单位稀疏矩阵",
+      "type": "数据结构",
+      "description": "单位稀疏矩阵"
+    },
+    {
+      "id": 302,
+      "name": "非零元素密度",
+      "type": "概念",
+      "description": "非零元素密度"
+    },
+    {
+      "id": 303,
+      "name": "spy()函数",
+      "type": "函数",
+      "description": "spy()函数"
+    },
+    {
+      "id": 74,
+      "name": "牛顿第二定律",
+      "type": "物理定律",
+      "description": "牛顿第二定律"
+    },
+    {
+      "id": 304,
+      "name": "矩阵的加减乘除运算",
+      "type": "数学运算",
+      "description": "矩阵的加减乘除运算"
+    },
+    {
+      "id": 305,
+      "name": "满矩阵",
+      "type": "矩阵属性",
+      "description": "满矩阵"
+    },
+    {
+      "id": 292,
+      "name": "稀疏矩阵",
+      "type": "矩阵属性",
+      "description": "稀疏矩阵"
+    },
+    {
+      "id": 306,
+      "name": "矩阵的数乘和幂运算",
+      "type": "数学运算",
+      "description": "矩阵的数乘和幂运算"
+    }
+  ],
+  "edges": [
+    {
+      "source": 1,
+      "target": 2,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含八种内置整数类型。"
+    },
+    {
+      "source": 1,
+      "target": 3,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含单精度浮点数。"
+    },
+    {
+      "source": 1,
+      "target": 4,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含双精度浮点数。"
+    },
+    {
+      "source": 1,
+      "target": 5,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含复数。"
+    },
+    {
+      "source": 1,
+      "target": 6,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含无穷大。"
+    },
+    {
+      "source": 1,
+      "target": 7,
+      "relationship": "包含",
+      "description": "MATLAB数值类型包含非数值。"
+    },
+    {
+      "source": 8,
+      "target": 9,
+      "relationship": "使用",
+      "description": "MATLAB用于处理真假命题"
+    },
+    {
+      "source": 8,
+      "target": 10,
+      "relationship": "包含",
+      "description": "MATLAB包含布尔值"
+    },
+    {
+      "source": 8,
+      "target": 11,
+      "relationship": "支持",
+      "description": "MATLAB支持关系运算"
+    },
+    {
+      "source": 8,
+      "target": 12,
+      "relationship": "支持",
+      "description": "MATLAB支持逻辑运算符"
+    },
+    {
+      "source": 11,
+      "target": 16,
+      "relationship": "是",
+      "description": "关系运算包含比较"
+    },
+    {
+      "source": 8,
+      "target": 17,
+      "relationship": "提供",
+      "description": "MATLAB提供异或运算"
+    },
+    {
+      "source": 8,
+      "target": 18,
+      "relationship": "提供",
+      "description": "MATLAB提供any函数"
+    },
+    {
+      "source": 13,
+      "target": 11,
+      "relationship": "包含",
+      "description": "表2-6包含关系运算"
+    },
+    {
+      "source": 14,
+      "target": 11,
+      "relationship": "包含",
+      "description": "表2-7包含关系运算"
+    },
+    {
+      "source": 15,
+      "target": 8,
+      "relationship": "操作",
+      "description": "赋值操作于MATLAB"
+    },
+    {
+      "source": 19,
+      "target": 20,
+      "relationship": "是",
+      "description": "字符串本质上是存储在行向量中的字符。"
+    },
+    {
+      "source": 19,
+      "target": 21,
+      "relationship": "是",
+      "description": "字符串可以被表示为字符矩阵。"
+    },
+    {
+      "source": 21,
+      "target": 22,
+      "relationship": "是",
+      "description": "字符串通常被视为ASCII数值数组。"
+    },
+    {
+      "source": 19,
+      "target": 23,
+      "relationship": "使用",
+      "description": "利用MATLAB的数组操作来理解字符串的ASCII表达，例如取绝对值。"
+    },
+    {
+      "source": 19,
+      "target": 8,
+      "relationship": "在",
+      "description": "字符串在MATLAB中被使用。"
+    },
+    {
+      "source": 8,
+      "target": 26,
+      "relationship": "包含",
+      "description": "MATLAB中函数调用可以使用直接调用法"
+    },
+    {
+      "source": 8,
+      "target": 27,
+      "relationship": "包含",
+      "description": "MATLAB中函数调用可以使用间接调用法"
+    },
+    {
+      "source": 26,
+      "target": 28,
+      "relationship": "使用",
+      "description": "直接调用法使用子函数"
+    },
+    {
+      "source": 28,
+      "target": 29,
+      "relationship": "存在于",
+      "description": "子函数存在于M文件中"
+    },
+    {
+      "source": 29,
+      "target": 30,
+      "relationship": "包含",
+      "description": "M文件中可以存在一个主函数"
+    },
+    {
+      "source": 27,
+      "target": 31,
+      "relationship": "使用",
+      "description": "间接调用法使用函数句柄"
+    },
+    {
+      "source": 31,
+      "target": 32,
+      "relationship": "创建",
+      "description": "函数句柄通过操作符 @ 创建"
+    },
+    {
+      "source": 31,
+      "target": 33,
+      "relationship": "包含",
+      "description": "函数句柄保存函数名"
+    },
+    {
+      "source": 31,
+      "target": 34,
+      "relationship": "使用",
+      "description": "函数句柄可以使用函数句柄操作函数"
+    },
+    {
+      "source": 34,
+      "target": 35,
+      "relationship": "参考",
+      "description": "函数句柄操作函数参考表2-9"
+    },
+    {
+      "source": 36,
+      "target": 37,
+      "relationship": "类似于",
+      "description": "MATLAB结构体是C语言结构体的类似物"
+    },
+    {
+      "source": 36,
+      "target": 38,
+      "relationship": "包含",
+      "description": "结构体包含结构体字段"
+    },
+    {
+      "source": 39,
+      "target": 19,
+      "relationship": "包含",
+      "description": "结构体student包含字符串（姓名）"
+    },
+    {
+      "source": 39,
+      "target": 40,
+      "relationship": "包含",
+      "description": "结构体student包含浮点数（年级）"
+    },
+    {
+      "source": 39,
+      "target": 41,
+      "relationship": "包含",
+      "description": "结构体student包含字符串数组（科目）"
+    },
+    {
+      "source": 39,
+      "target": 42,
+      "relationship": "包含",
+      "description": "结构体student包含数组（成绩）"
+    },
+    {
+      "source": 43,
+      "target": 36,
+      "relationship": "使用方法",
+      "description": "结构体名.字段名称是创建MATLAB结构体的常用方法"
+    },
+    {
+      "source": 44,
+      "target": 36,
+      "relationship": "创建",
+      "description": "struct函数用于创建MATLAB结构体"
+    },
+    {
+      "source": 45,
+      "target": 36,
+      "relationship": "是",
+      "description": "结构体数组是MATLAB结构体的数组形式"
+    },
+    {
+      "source": 46,
+      "target": 45,
+      "relationship": "用于创建",
+      "description": "圆括号索引用于创建不同尺寸的结构体数组"
+    },
+    {
+      "source": 8,
+      "target": 47,
+      "relationship": "使用",
+      "description": "MATLAB使用数据类型"
+    },
+    {
+      "source": 8,
+      "target": 42,
+      "relationship": "存储",
+      "description": "MATLAB中所有数据类型都以数组和矩阵的形式存储"
+    },
+    {
+      "source": 8,
+      "target": 48,
+      "relationship": "采用",
+      "description": "MATLAB中矩阵采用线性代数方法"
+    },
+    {
+      "source": 42,
+      "target": 50,
+      "relationship": "侧重",
+      "description": "数组侧重元素间运算"
+    },
+    {
+      "source": 42,
+      "target": 51,
+      "relationship": "定义",
+      "description": "MATLAB数组的定义具有广义性，可以包含数值、字符串甚至指针等多种数据类型，并通过变量赋值直接创建数组，冒号“:”用于定义数值序列"
+    },
+    {
+      "source": 8,
+      "target": 52,
+      "relationship": "提供",
+      "description": "MATLAB提供预定义函数创建线性序列和逻辑序列"
+    },
+    {
+      "source": 8,
+      "target": 53,
+      "relationship": "创建",
+      "description": "MATLAB提供预定义函数创建逻辑序列"
+    },
+    {
+      "source": 42,
+      "target": 54,
+      "relationship": "是",
+      "description": "空数组是指元素个数为0的数组"
+    },
+    {
+      "source": 42,
+      "target": 55,
+      "relationship": "基础",
+      "description": "理解数组的这些基本概念和操作，是熟练运用MATLAB进行数值计算的基础"
+    },
+    {
+      "source": 56,
+      "target": 57,
+      "relationship": "包含",
+      "description": "单元数组由多个单元组成"
+    },
+    {
+      "source": 57,
+      "target": 58,
+      "relationship": "包含",
+      "description": "单元可以包含数值类型的数据"
+    },
+    {
+      "source": 57,
+      "target": 19,
+      "relationship": "包含",
+      "description": "单元可以包含字符串类型的数据"
+    },
+    {
+      "source": 57,
+      "target": 59,
+      "relationship": "包含",
+      "description": "单元可以包含结构体类型的数据"
+    },
+    {
+      "source": 8,
+      "target": 56,
+      "relationship": "使用",
+      "description": "MATLAB使用单元数组"
+    },
+    {
+      "source": 60,
+      "target": 56,
+      "relationship": "创建",
+      "description": "cell函数用于创建单元数组"
+    },
+    {
+      "source": 61,
+      "target": 56,
+      "relationship": "操作",
+      "description": "单元外标识用于寻访单元数组"
+    },
+    {
+      "source": 62,
+      "target": 56,
+      "relationship": "操作",
+      "description": "单元内地址用于寻访单元数组"
+    },
+    {
+      "source": 63,
+      "target": 56,
+      "relationship": "访问",
+      "description": "C(m,n)访问单元数组中的单元"
+    },
+    {
+      "source": 64,
+      "target": 56,
+      "relationship": "访问",
+      "description": "C{m,n}访问单元数组中的单元内容"
+    },
+    {
+      "source": 65,
+      "target": 56,
+      "relationship": "操作",
+      "description": "reshape函数用于调整单元数组的维度"
+    },
+    {
+      "source": 8,
+      "target": 66,
+      "relationship": "包含",
+      "description": "MATLAB 包含 map 容器"
+    },
+    {
+      "source": 66,
+      "target": 67,
+      "relationship": "包含",
+      "description": "map 容器包含键 (key)"
+    },
+    {
+      "source": 66,
+      "target": 68,
+      "relationship": "包含",
+      "description": "map 容器包含值 (value)"
+    },
+    {
+      "source": 66,
+      "target": 69,
+      "relationship": "使用",
+      "description": "map 容器使用容器包"
+    },
+    {
+      "source": 69,
+      "target": 70,
+      "relationship": "包含",
+      "description": "容器包包含 keys 函数"
+    },
+    {
+      "source": 69,
+      "target": 71,
+      "relationship": "包含",
+      "description": "容器包包含 values 函数"
+    },
+    {
+      "source": 69,
+      "target": 72,
+      "relationship": "包含",
+      "description": "容器包包含 remove 函数"
+    },
+    {
+      "source": 66,
+      "target": 73,
+      "relationship": "使用",
+      "description": "map 容器使用字符串键名"
+    },
+    {
+      "source": 48,
+      "target": 8,
+      "relationship": "存在于",
+      "description": "矩阵是MATLAB中的一种数据结构。"
+    },
+    {
+      "source": 42,
+      "target": 8,
+      "relationship": "存在于",
+      "description": "数组是MATLAB中的一种数据结构。"
+    },
+    {
+      "source": 48,
+      "target": 42,
+      "relationship": "是",
+      "description": "矩阵是数组的一种特殊类型。"
+    },
+    {
+      "source": 20,
+      "target": 48,
+      "relationship": "是",
+      "description": "行向量是矩阵的特殊形式。"
+    },
+    {
+      "source": 75,
+      "target": 48,
+      "relationship": "是",
+      "description": "列向量是矩阵的特殊形式。"
+    },
+    {
+      "source": 76,
+      "target": 48,
+      "relationship": "系数表达",
+      "description": "矩阵可以用于表达方程组的系数。"
+    },
+    {
+      "source": 48,
+      "target": 77,
+      "relationship": "构造方式",
+      "description": "矩阵的构造方式使用方括号"
+    },
+    {
+      "source": 48,
+      "target": 78,
+      "relationship": "分隔符",
+      "description": "矩阵元素之间用空格或逗号分隔"
+    },
+    {
+      "source": 48,
+      "target": 79,
+      "relationship": "分隔符",
+      "description": "矩阵元素之间用空格或逗号分隔"
+    },
+    {
+      "source": 48,
+      "target": 80,
+      "relationship": "分隔符",
+      "description": "行之间用分号分隔"
+    },
+    {
+      "source": 48,
+      "target": 8,
+      "relationship": "使用",
+      "description": "利用MATLAB提供的特殊矩阵构造函数"
+    },
+    {
+      "source": 8,
+      "target": 81,
+      "relationship": "包含",
+      "description": "表2-12是MATLAB提供的特殊矩阵构造函数"
+    },
+    {
+      "source": 82,
+      "target": 48,
+      "relationship": "是",
+      "description": "向量是m=1或n=1的矩阵"
+    },
+    {
+      "source": 83,
+      "target": 48,
+      "relationship": "是",
+      "description": "标量是m=n=1的矩阵"
+    },
+    {
+      "source": 83,
+      "target": 84,
+      "relationship": "包含",
+      "description": "标量是单个实数或复数"
+    },
+    {
+      "source": 83,
+      "target": 5,
+      "relationship": "包含",
+      "description": "标量是单个实数或复数"
+    },
+    {
+      "source": 85,
+      "target": 48,
+      "relationship": "是",
+      "description": "空矩阵是m=n=0、m=0或n=0的矩阵"
+    },
+    {
+      "source": 8,
+      "target": 84,
+      "relationship": "存储",
+      "description": "单个实数或复数都以矩阵形式存储"
+    },
+    {
+      "source": 83,
+      "target": 48,
+      "relationship": "是",
+      "description": "单个数据或由单个数据构成的矩阵也属于标量"
+    },
+    {
+      "source": 86,
+      "target": 90,
+      "relationship": "支持",
+      "description": "矩阵旋转是矩阵运算的一种方法"
+    },
+    {
+      "source": 87,
+      "target": 90,
+      "relationship": "支持",
+      "description": "维度改变是矩阵运算的一种方法"
+    },
+    {
+      "source": 88,
+      "target": 90,
+      "relationship": "支持",
+      "description": "矩阵元素删除是矩阵运算的一种方法"
+    },
+    {
+      "source": 8,
+      "target": 89,
+      "relationship": "提供",
+      "description": "MATLAB提供了矩阵旋转与维度改变的函数"
+    },
+    {
+      "source": 89,
+      "target": 86,
+      "relationship": "包含",
+      "description": "矩阵旋转与维度改变是矩阵旋转的一部分"
+    },
+    {
+      "source": 89,
+      "target": 87,
+      "relationship": "包含",
+      "description": "矩阵旋转与维度改变是维度改变的一部分"
+    },
+    {
+      "source": 8,
+      "target": 91,
+      "relationship": "使用",
+      "description": "MATLAB用于访问和操作矩阵元素"
+    },
+    {
+      "source": 8,
+      "target": 92,
+      "relationship": "使用",
+      "description": "MATLAB使用双下标索引访问矩阵元素"
+    },
+    {
+      "source": 8,
+      "target": 93,
+      "relationship": "使用",
+      "description": "MATLAB使用单下标索引访问矩阵元素"
+    },
+    {
+      "source": 93,
+      "target": 94,
+      "relationship": "具有",
+      "description": "单下标索引遵循列元素优先的原则"
+    },
+    {
+      "source": 8,
+      "target": 95,
+      "relationship": "使用",
+      "description": "MATLAB使用内部函数进行索引转换"
+    },
+    {
+      "source": 95,
+      "target": 96,
+      "relationship": "是",
+      "description": "IND2SINGLE是MATLAB内部函数之一"
+    },
+    {
+      "source": 95,
+      "target": 97,
+      "relationship": "是",
+      "description": "SINGLE2IND是MATLAB内部函数之一"
+    },
+    {
+      "source": 8,
+      "target": 98,
+      "relationship": "使用",
+      "description": "MATLAB使用冒号索引访问矩阵元素"
+    },
+    {
+      "source": 98,
+      "target": 99,
+      "relationship": "表示",
+      "description": "冒号索引可以表示连续元素"
+    },
+    {
+      "source": 48,
+      "target": 8,
+      "relationship": "使用",
+      "description": "矩阵在MATLAB环境中被使用。"
+    },
+    {
+      "source": 48,
+      "target": 100,
+      "relationship": "使用",
+      "description": "测试函数用于判断矩阵类型。"
+    },
+    {
+      "source": 48,
+      "target": 101,
+      "relationship": "使用",
+      "description": "shape信息查询函数用于获取矩阵大小。"
+    },
+    {
+      "source": 48,
+      "target": 102,
+      "relationship": "使用",
+      "description": "ndims函数用于计算矩阵维度。"
+    },
+    {
+      "source": 48,
+      "target": 103,
+      "relationship": "使用",
+      "description": "whos命令用于查看矩阵的内存占用情况。"
+    },
+    {
+      "source": 48,
+      "target": 104,
+      "relationship": "使用",
+      "description": "zeros函数用于创建矩阵。"
+    },
+    {
+      "source": 48,
+      "target": 105,
+      "relationship": "使用",
+      "description": "eye函数用于创建矩阵。"
+    },
+    {
+      "source": 48,
+      "target": 106,
+      "relationship": "涉及",
+      "description": "矩阵的存储和使用与内存占用相关。"
+    },
+    {
+      "source": 48,
+      "target": 58,
+      "relationship": "包含",
+      "description": "矩阵可以包含数值数据。"
+    },
+    {
+      "source": 48,
+      "target": 19,
+      "relationship": "包含",
+      "description": "矩阵可以包含字符串数据。"
+    },
+    {
+      "source": 48,
+      "target": 107,
+      "relationship": "包含",
+      "description": "矩阵可以包含元胞数据。"
+    },
+    {
+      "source": 108,
+      "target": 109,
+      "relationship": "包含",
+      "description": "MATLAB矩阵操作包含矩阵存储"
+    },
+    {
+      "source": 108,
+      "target": 110,
+      "relationship": "包含",
+      "description": "MATLAB矩阵操作包含矩阵下标寻址"
+    },
+    {
+      "source": 108,
+      "target": 111,
+      "relationship": "包含",
+      "description": "MATLAB矩阵操作包含线性寻址"
+    },
+    {
+      "source": 108,
+      "target": 112,
+      "relationship": "包含",
+      "description": "MATLAB矩阵操作包含矩阵元素赋值"
+    },
+    {
+      "source": 108,
+      "target": 113,
+      "relationship": "包含",
+      "description": "MATLAB矩阵操作包含矩阵合并操作"
+    },
+    {
+      "source": 113,
+      "target": 114,
+      "relationship": "使用",
+      "description": "矩阵合并操作使用cat函数"
+    },
+    {
+      "source": 113,
+      "target": 115,
+      "relationship": "依赖",
+      "description": "矩阵合并操作依赖维度一致性"
+    },
+    {
+      "source": 113,
+      "target": 116,
+      "relationship": "产生",
+      "description": "矩阵合并操作可能产生残缺矩阵"
+    },
+    {
+      "source": 117,
+      "target": 109,
+      "relationship": "操作",
+      "description": "blkdiag函数操作矩阵存储"
+    },
+    {
+      "source": 117,
+      "target": 118,
+      "relationship": "构建",
+      "description": "blkdiag函数构建块对角化矩阵"
+    },
+    {
+      "source": 8,
+      "target": 119,
+      "relationship": "使用",
+      "description": "MATLAB使用算术运算符进行数学运算。"
+    },
+    {
+      "source": 119,
+      "target": 120,
+      "relationship": "包含",
+      "description": "加法是算术运算符的一种。"
+    },
+    {
+      "source": 119,
+      "target": 121,
+      "relationship": "包含",
+      "description": "减法是算术运算符的一种。"
+    },
+    {
+      "source": 119,
+      "target": 122,
+      "relationship": "包含",
+      "description": "乘法是算术运算符的一种。"
+    },
+    {
+      "source": 119,
+      "target": 123,
+      "relationship": "包含",
+      "description": "除法是算术运算符的一种。"
+    },
+    {
+      "source": 119,
+      "target": 124,
+      "relationship": "包含",
+      "description": "点乘是算术运算符的一种。"
+    },
+    {
+      "source": 119,
+      "target": 125,
+      "relationship": "包含",
+      "description": "点除是算术运算符的一种。"
+    },
+    {
+      "source": 8,
+      "target": 126,
+      "relationship": "使用",
+      "description": "MATLAB使用运算函数进行更复杂的数学操作。"
+    },
+    {
+      "source": 126,
+      "target": 55,
+      "relationship": "实现",
+      "description": "运算函数用于实现数值计算。"
+    },
+    {
+      "source": 126,
+      "target": 127,
+      "relationship": "实现",
+      "description": "运算函数用于实现数据分析。"
+    },
+    {
+      "source": 8,
+      "target": 128,
+      "relationship": "提供",
+      "description": "MATLAB提供了关系运算符"
+    },
+    {
+      "source": 128,
+      "target": 58,
+      "relationship": "应用于",
+      "description": "关系运算符可应用于数值"
+    },
+    {
+      "source": 128,
+      "target": 42,
+      "relationship": "应用于",
+      "description": "关系运算符可应用于数组"
+    },
+    {
+      "source": 128,
+      "target": 48,
+      "relationship": "应用于",
+      "description": "关系运算符可应用于矩阵"
+    },
+    {
+      "source": 128,
+      "target": 19,
+      "relationship": "应用于",
+      "description": "关系运算符可应用于字符串"
+    },
+    {
+      "source": 128,
+      "target": 130,
+      "relationship": "用于",
+      "description": "关系运算符用于逻辑判断"
+    },
+    {
+      "source": 128,
+      "target": 131,
+      "relationship": "用于",
+      "description": "关系运算符用于数据筛选"
+    },
+    {
+      "source": 8,
+      "target": 129,
+      "relationship": "使用",
+      "description": "MATLAB中常使用eps来代替数组中的零"
+    },
+    {
+      "source": 128,
+      "target": 129,
+      "relationship": "避免",
+      "description": "eps用于避免除以零的情况"
+    },
+    {
+      "source": 8,
+      "target": 12,
+      "relationship": "使用",
+      "description": "MATLAB 使用逻辑运算符"
+    },
+    {
+      "source": 12,
+      "target": 132,
+      "relationship": "包含",
+      "description": "与运算符是逻辑运算符的一种"
+    },
+    {
+      "source": 12,
+      "target": 133,
+      "relationship": "包含",
+      "description": "或运算符是逻辑运算符的一种"
+    },
+    {
+      "source": 12,
+      "target": 134,
+      "relationship": "包含",
+      "description": "非运算符是逻辑运算符的一种"
+    },
+    {
+      "source": 12,
+      "target": 48,
+      "relationship": "操作对象",
+      "description": "逻辑运算符对矩阵进行操作"
+    },
+    {
+      "source": 12,
+      "target": 58,
+      "relationship": "操作对象",
+      "description": "逻辑运算符对数值进行操作"
+    },
+    {
+      "source": 12,
+      "target": 135,
+      "relationship": "相关",
+      "description": "逻辑函数与逻辑运算符相关"
+    },
+    {
+      "source": 139,
+      "target": 136,
+      "relationship": "遵循",
+      "description": "表达式遵循运算优先级规则"
+    },
+    {
+      "source": 119,
+      "target": 136,
+      "relationship": "属于",
+      "description": "算术运算符是运算优先级中的一部分"
+    },
+    {
+      "source": 128,
+      "target": 136,
+      "relationship": "属于",
+      "description": "关系运算符是运算优先级中的一部分"
+    },
+    {
+      "source": 12,
+      "target": 136,
+      "relationship": "属于",
+      "description": "逻辑运算符是运算优先级中的一部分"
+    },
+    {
+      "source": 139,
+      "target": 137,
+      "relationship": "使用",
+      "description": "表达式可以使用括号改变计算优先级"
+    },
+    {
+      "source": 138,
+      "target": 136,
+      "relationship": "提供",
+      "description": "表2-24提供MATLAB的具体运算优先级排列"
+    },
+    {
+      "source": 8,
+      "target": 139,
+      "relationship": "在",
+      "description": "表达式在MATLAB等编程环境中计算"
+    },
+    {
+      "source": 140,
+      "target": 141,
+      "relationship": "实现方式",
+      "description": "编程可以通过直接赋值构造字符串。"
+    },
+    {
+      "source": 140,
+      "target": 8,
+      "relationship": "使用工具",
+      "description": "编程可以使用MATLAB进行字符串操作。"
+    },
+    {
+      "source": 8,
+      "target": 142,
+      "relationship": "函数",
+      "description": "MATLAB提供了strvcat函数用于字符串的纵向连接。"
+    },
+    {
+      "source": 8,
+      "target": 143,
+      "relationship": "函数",
+      "description": "MATLAB提供了char函数用于字符串的纵向连接。"
+    },
+    {
+      "source": 19,
+      "target": 144,
+      "relationship": "操作",
+      "description": "字符串可以通过纵向连接的方式进行拼接。"
+    },
+    {
+      "source": 19,
+      "target": 141,
+      "relationship": "构造方式",
+      "description": "字符串可以通过直接赋值构造。"
+    },
+    {
+      "source": 8,
+      "target": 142,
+      "relationship": "功能",
+      "description": "strvcat函数用于连接多行字符串，并统一每行长度。"
+    },
+    {
+      "source": 8,
+      "target": 143,
+      "relationship": "功能",
+      "description": "char函数与strvcat类似，但忽略多行字符串中的空字符串并进行空格补偿。"
+    },
+    {
+      "source": 145,
+      "target": 128,
+      "relationship": "使用",
+      "description": "字符串比较使用关系运算符进行。"
+    },
+    {
+      "source": 145,
+      "target": 146,
+      "relationship": "使用",
+      "description": "字符串比较使用 strcmp 函数进行。"
+    },
+    {
+      "source": 128,
+      "target": 147,
+      "relationship": "要求",
+      "description": "关系运算符要求被比较的字符串长度一致。"
+    },
+    {
+      "source": 146,
+      "target": 145,
+      "relationship": "实现",
+      "description": "strcmp 函数实现字符串比较。"
+    },
+    {
+      "source": 149,
+      "target": 148,
+      "relationship": "使用",
+      "description": "findstr函数是字符串处理中的一个工具。"
+    },
+    {
+      "source": 150,
+      "target": 148,
+      "relationship": "使用",
+      "description": "strrep函数是字符串处理中的一个工具。"
+    },
+    {
+      "source": 149,
+      "target": 151,
+      "relationship": "限制",
+      "description": "findstr函数不适用于字符串矩阵。"
+    },
+    {
+      "source": 149,
+      "target": 152,
+      "relationship": "使用",
+      "description": "findstr函数需要通过循环索引来搜索矩阵内的元素。"
+    },
+    {
+      "source": 150,
+      "target": 151,
+      "relationship": "处理",
+      "description": "strrep函数能够处理任意长度的字符串，可以用于替换字符串矩阵中的元素。"
+    },
+    {
+      "source": 155,
+      "target": 153,
+      "relationship": "使用",
+      "description": "转换函数用于处理字符串类型。"
+    },
+    {
+      "source": 155,
+      "target": 154,
+      "relationship": "使用",
+      "description": "转换函数用于处理数值类型。"
+    },
+    {
+      "source": 8,
+      "target": 155,
+      "relationship": "提供",
+      "description": "MATLAB 提供了转换函数。"
+    },
+    {
+      "source": 155,
+      "target": 156,
+      "relationship": "应用",
+      "description": "转换函数在文本处理领域有应用。"
+    },
+    {
+      "source": 155,
+      "target": 157,
+      "relationship": "应用",
+      "description": "转换函数在数据可视化领域有应用。"
+    },
+    {
+      "source": 155,
+      "target": 158,
+      "relationship": "应用",
+      "description": "转换函数在用户交互领域有应用。"
+    },
+    {
+      "source": 153,
+      "target": 154,
+      "relationship": "转换",
+      "description": "字符串类型可以转换为数值类型。"
+    },
+    {
+      "source": 154,
+      "target": 153,
+      "relationship": "转换",
+      "description": "数值类型可以转换为字符串类型。"
+    },
+    {
+      "source": 8,
+      "target": 42,
+      "relationship": "使用",
+      "description": "MATLAB用于创建和操作数组。"
+    },
+    {
+      "source": 42,
+      "target": 77,
+      "relationship": "定义",
+      "description": "MATLAB中数组通常使用方括号定义。"
+    },
+    {
+      "source": 42,
+      "target": 20,
+      "relationship": "是",
+      "description": "行向量是数组的一种类型。"
+    },
+    {
+      "source": 42,
+      "target": 75,
+      "relationship": "是",
+      "description": "列向量是数组的一种类型。"
+    },
+    {
+      "source": 42,
+      "target": 159,
+      "relationship": "使用",
+      "description": "通过访问操作符来提取数组元素。"
+    },
+    {
+      "source": 42,
+      "target": 160,
+      "relationship": "是",
+      "description": "一维数组是数组的一种类型。"
+    },
+    {
+      "source": 160,
+      "target": 161,
+      "relationship": "使用",
+      "description": "冒号用于创建一维数组。"
+    },
+    {
+      "source": 8,
+      "target": 162,
+      "relationship": "使用",
+      "description": "MATLAB提供了logspace()函数用于创建以对数间隔排列的一维数组。"
+    },
+    {
+      "source": 162,
+      "target": 163,
+      "relationship": "生成",
+      "description": "logspace()函数生成对数间隔。"
+    },
+    {
+      "source": 8,
+      "target": 164,
+      "relationship": "使用",
+      "description": "MATLAB提供了linspace()函数用于生成线性间隔的数组。"
+    },
+    {
+      "source": 164,
+      "target": 165,
+      "relationship": "生成",
+      "description": "linspace()函数生成线性间隔。"
+    },
+    {
+      "source": 74,
+      "target": 166,
+      "relationship": "无关",
+      "description": "这两个定律属于不同的物理领域。"
+    },
+    {
+      "source": 8,
+      "target": 42,
+      "relationship": "使用",
+      "description": "MATLAB用于处理数组"
+    },
+    {
+      "source": 42,
+      "target": 167,
+      "relationship": "包含",
+      "description": "算术运算是数组的操作之一"
+    },
+    {
+      "source": 167,
+      "target": 168,
+      "relationship": "包含",
+      "description": "加减运算是算术运算的一种"
+    },
+    {
+      "source": 167,
+      "target": 169,
+      "relationship": "包含",
+      "description": "乘除运算是算术运算的一种"
+    },
+    {
+      "source": 167,
+      "target": 170,
+      "relationship": "包含",
+      "description": "乘方运算是算术运算的一种"
+    },
+    {
+      "source": 42,
+      "target": 11,
+      "relationship": "包含",
+      "description": "关系运算是数组的操作之一"
+    },
+    {
+      "source": 42,
+      "target": 171,
+      "relationship": "包含",
+      "description": "逻辑运算是数组的操作之一"
+    },
+    {
+      "source": 172,
+      "target": 171,
+      "relationship": "包含",
+      "description": "与运算是逻辑运算的一种"
+    },
+    {
+      "source": 173,
+      "target": 171,
+      "relationship": "包含",
+      "description": "或运算是逻辑运算的一种"
+    },
+    {
+      "source": 174,
+      "target": 171,
+      "relationship": "包含",
+      "description": "非运算是逻辑运算的一种"
+    },
+    {
+      "source": 8,
+      "target": 175,
+      "relationship": "提供",
+      "description": "MATLAB提供了生成零矩阵的指令"
+    },
+    {
+      "source": 8,
+      "target": 176,
+      "relationship": "提供",
+      "description": "MATLAB提供了生成单位矩阵的指令"
+    },
+    {
+      "source": 8,
+      "target": 177,
+      "relationship": "提供",
+      "description": "MATLAB提供了生成全1矩阵的指令"
+    },
+    {
+      "source": 8,
+      "target": 178,
+      "relationship": "提供",
+      "description": "MATLAB提供了生成希尔伯特矩阵的函数"
+    },
+    {
+      "source": 8,
+      "target": 179,
+      "relationship": "提供",
+      "description": "MATLAB提供了生成托普利兹矩阵的函数"
+    },
+    {
+      "source": 180,
+      "target": 184,
+      "relationship": "使用",
+      "description": "随机矩阵通过rand()函数生成"
+    },
+    {
+      "source": 180,
+      "target": 185,
+      "relationship": "使用",
+      "description": "随机矩阵通过randn()函数生成"
+    },
+    {
+      "source": 181,
+      "target": 186,
+      "relationship": "使用",
+      "description": "魔方矩阵通过magic()函数生成"
+    },
+    {
+      "source": 182,
+      "target": 187,
+      "relationship": "使用",
+      "description": "帕斯卡矩阵通过vander()函数生成"
+    },
+    {
+      "source": 179,
+      "target": 20,
+      "relationship": "由",
+      "description": "托普利兹矩阵由行向量和列向量定义"
+    },
+    {
+      "source": 188,
+      "target": 90,
+      "relationship": "属于",
+      "description": "矩阵合并是矩阵运算中的一项操作"
+    },
+    {
+      "source": 188,
+      "target": 189,
+      "relationship": "使用",
+      "description": "cat()函数提供了矩阵合并的功能"
+    },
+    {
+      "source": 188,
+      "target": 190,
+      "relationship": "限制",
+      "description": "矩阵合并时，矩阵的形状必须保持方形"
+    },
+    {
+      "source": 191,
+      "target": 188,
+      "relationship": "是",
+      "description": "水平方向合并是矩阵合并的一种方式"
+    },
+    {
+      "source": 192,
+      "target": 188,
+      "relationship": "是",
+      "description": "垂直方向合并是矩阵合并的一种方式"
+    },
+    {
+      "source": 85,
+      "target": 188,
+      "relationship": "用于",
+      "description": "空矩阵用于行列的删除操作，从而从矩阵中移除元素"
+    },
+    {
+      "source": 193,
+      "target": 194,
+      "relationship": "包含",
+      "description": "转置是矩阵重构中的一种重要运算。"
+    },
+    {
+      "source": 193,
+      "target": 195,
+      "relationship": "包含",
+      "description": "共轭转置是矩阵重构中的一种重要运算。"
+    },
+    {
+      "source": 194,
+      "target": 8,
+      "relationship": "使用",
+      "description": "MATLAB中通过撇号“'”表示转置。"
+    },
+    {
+      "source": 195,
+      "target": 8,
+      "relationship": "使用",
+      "description": "MATLAB中通过撇号“'”表示共轭转置。"
+    },
+    {
+      "source": 194,
+      "target": 49,
+      "relationship": "涉及",
+      "description": "转置是线性代数中的概念。"
+    },
+    {
+      "source": 195,
+      "target": 49,
+      "relationship": "涉及",
+      "description": "共轭转置是线性代数中的概念。"
+    },
+    {
+      "source": 194,
+      "target": 196,
+      "relationship": "适用",
+      "description": "转置操作在方阵上体现。"
+    },
+    {
+      "source": 194,
+      "target": 197,
+      "relationship": "改变",
+      "description": "转置操作改变矩阵的维度。"
+    },
+    {
+      "source": 195,
+      "target": 198,
+      "relationship": "涉及",
+      "description": "共轭转置对矩阵的复数元素进行共轭运算。"
+    },
+    {
+      "source": 194,
+      "target": 199,
+      "relationship": "结果一致",
+      "description": "对于实数矩阵，转置和共轭转置结果一致。"
+    },
+    {
+      "source": 200,
+      "target": 49,
+      "relationship": "属于",
+      "description": "矩阵加法是线性代数中的基本运算。"
+    },
+    {
+      "source": 200,
+      "target": 48,
+      "relationship": "涉及",
+      "description": "矩阵加法是作用于矩阵的运算。"
+    },
+    {
+      "source": 201,
+      "target": 48,
+      "relationship": "涉及",
+      "description": "矩阵减法是作用于矩阵的运算。"
+    },
+    {
+      "source": 200,
+      "target": 202,
+      "relationship": "依赖",
+      "description": "矩阵加法的前提条件是矩阵的维度一致。"
+    },
+    {
+      "source": 200,
+      "target": 83,
+      "relationship": "涉及",
+      "description": "矩阵加法中其中至少有一个矩阵为标量。"
+    },
+    {
+      "source": 200,
+      "target": 203,
+      "relationship": "涉及",
+      "description": "矩阵加法定义为对应元素相加。"
+    },
+    {
+      "source": 200,
+      "target": 204,
+      "relationship": "遵循",
+      "description": "矩阵加法遵循交换律。"
+    },
+    {
+      "source": 200,
+      "target": 205,
+      "relationship": "遵循",
+      "description": "矩阵加法遵循结合律。"
+    },
+    {
+      "source": 200,
+      "target": 206,
+      "relationship": "遵循",
+      "description": "矩阵加法遵循零元律。"
+    },
+    {
+      "source": 200,
+      "target": 207,
+      "relationship": "遵循",
+      "description": "矩阵加法遵循负元律。"
+    },
+    {
+      "source": 208,
+      "target": 209,
+      "relationship": "包含",
+      "description": "MATLAB矩阵运算包含数与矩阵的乘法"
+    },
+    {
+      "source": 208,
+      "target": 210,
+      "relationship": "包含",
+      "description": "MATLAB矩阵运算包含矩阵与矩阵的乘法"
+    },
+    {
+      "source": 209,
+      "target": 205,
+      "relationship": "满足",
+      "description": "数与矩阵的乘法满足结合律"
+    },
+    {
+      "source": 209,
+      "target": 211,
+      "relationship": "满足",
+      "description": "数与矩阵的乘法满足分配律"
+    },
+    {
+      "source": 209,
+      "target": 176,
+      "relationship": "相关",
+      "description": "数与矩阵的乘法与单位矩阵相关"
+    },
+    {
+      "source": 210,
+      "target": 205,
+      "relationship": "满足",
+      "description": "矩阵与矩阵的乘法满足结合律"
+    },
+    {
+      "source": 210,
+      "target": 176,
+      "relationship": "相关",
+      "description": "矩阵与矩阵的乘法与单位矩阵相关"
+    },
+    {
+      "source": 212,
+      "target": 213,
+      "relationship": "逆运算",
+      "description": "矩阵除法是矩阵乘法运算的逆运算。"
+    },
+    {
+      "source": 212,
+      "target": 214,
+      "relationship": "涉及",
+      "description": "矩阵除法涉及逆矩阵。"
+    },
+    {
+      "source": 212,
+      "target": 202,
+      "relationship": "要求",
+      "description": "矩阵除法运算对矩阵的维度有严格要求。"
+    },
+    {
+      "source": 215,
+      "target": 213,
+      "relationship": "涉及",
+      "description": "矩阵幂运算通过重复矩阵乘法进行计算。"
+    },
+    {
+      "source": 215,
+      "target": 196,
+      "relationship": "应用于",
+      "description": "矩阵幂运算应用于方阵。"
+    },
+    {
+      "source": 215,
+      "target": 8,
+      "relationship": "实现",
+      "description": "在MATLAB中可以使用“^”符号实现矩阵幂运算。"
+    },
+    {
+      "source": 215,
+      "target": 216,
+      "relationship": "应用领域",
+      "description": "矩阵幂运算在矩阵代数领域具有广泛应用。"
+    },
+    {
+      "source": 215,
+      "target": 217,
+      "relationship": "应用领域",
+      "description": "矩阵幂运算在线性变换领域具有广泛应用。"
+    },
+    {
+      "source": 215,
+      "target": 55,
+      "relationship": "应用领域",
+      "description": "矩阵幂运算在数值计算领域具有广泛应用。"
+    },
+    {
+      "source": 8,
+      "target": 218,
+      "relationship": "包含",
+      "description": "MATLAB中包含find()函数"
+    },
+    {
+      "source": 218,
+      "target": 48,
+      "relationship": "作用于",
+      "description": "find()函数作用于矩阵"
+    },
+    {
+      "source": 218,
+      "target": 219,
+      "relationship": "查找",
+      "description": "find()函数用于查找矩阵中的非零元素"
+    },
+    {
+      "source": 218,
+      "target": 220,
+      "relationship": "返回",
+      "description": "find()函数返回索引位置"
+    },
+    {
+      "source": 218,
+      "target": 221,
+      "relationship": "返回",
+      "description": "find()函数返回行索引"
+    },
+    {
+      "source": 218,
+      "target": 222,
+      "relationship": "返回",
+      "description": "find()函数返回列索引"
+    },
+    {
+      "source": 218,
+      "target": 223,
+      "relationship": "提供",
+      "description": "find()函数提供双下标"
+    },
+    {
+      "source": 224,
+      "target": 218,
+      "relationship": "使用",
+      "description": "例3-30使用find()函数"
+    },
+    {
+      "source": 8,
+      "target": 225,
+      "relationship": "包含",
+      "description": "MATLAB中包含sort()函数"
+    },
+    {
+      "source": 225,
+      "target": 48,
+      "relationship": "使用",
+      "description": "sort()函数用于对矩阵进行排序"
+    },
+    {
+      "source": 225,
+      "target": 82,
+      "relationship": "使用",
+      "description": "sort()函数用于对向量进行排序"
+    },
+    {
+      "source": 225,
+      "target": 226,
+      "relationship": "实现",
+      "description": "sort()函数实现升序排序"
+    },
+    {
+      "source": 225,
+      "target": 227,
+      "relationship": "实现",
+      "description": "sort()函数实现降序排序"
+    },
+    {
+      "source": 225,
+      "target": 202,
+      "relationship": "控制",
+      "description": "sort()函数通过维度控制排序方式"
+    },
+    {
+      "source": 202,
+      "target": 228,
+      "relationship": "包含",
+      "description": "维度包含列排序"
+    },
+    {
+      "source": 202,
+      "target": 229,
+      "relationship": "包含",
+      "description": "维度包含行排序"
+    },
+    {
+      "source": 225,
+      "target": 230,
+      "relationship": "用于",
+      "description": "sort()函数用于数据处理"
+    },
+    {
+      "source": 225,
+      "target": 127,
+      "relationship": "用于",
+      "description": "sort()函数用于数据分析"
+    },
+    {
+      "source": 8,
+      "target": 231,
+      "relationship": "使用",
+      "description": "MATLAB使用sum()函数"
+    },
+    {
+      "source": 8,
+      "target": 232,
+      "relationship": "使用",
+      "description": "MATLAB使用cumsum()函数"
+    },
+    {
+      "source": 231,
+      "target": 91,
+      "relationship": "操作对象",
+      "description": "sum()函数对矩阵元素进行操作"
+    },
+    {
+      "source": 232,
+      "target": 91,
+      "relationship": "操作对象",
+      "description": "cumsum()函数对矩阵元素进行操作"
+    },
+    {
+      "source": 231,
+      "target": 90,
+      "relationship": "属于",
+      "description": "sum()函数是矩阵运算中的重要工具"
+    },
+    {
+      "source": 232,
+      "target": 90,
+      "relationship": "属于",
+      "description": "cumsum()函数是矩阵运算中的重要工具"
+    },
+    {
+      "source": 231,
+      "target": 233,
+      "relationship": "计算",
+      "description": "sum()函数计算列求和"
+    },
+    {
+      "source": 231,
+      "target": 234,
+      "relationship": "计算",
+      "description": "sum()函数计算行求和"
+    },
+    {
+      "source": 232,
+      "target": 235,
+      "relationship": "计算",
+      "description": "cumsum()函数计算累积和"
+    },
+    {
+      "source": 231,
+      "target": 236,
+      "relationship": "体现",
+      "description": "sum(sum(A))体现了函数嵌套的用法"
+    },
+    {
+      "source": 232,
+      "target": 236,
+      "relationship": "体现",
+      "description": "cumsum(cumsum(A))体现了函数嵌套的用法"
+    },
+    {
+      "source": 8,
+      "target": 237,
+      "relationship": "使用",
+      "description": "MATLAB中使用了prod()函数"
+    },
+    {
+      "source": 8,
+      "target": 238,
+      "relationship": "使用",
+      "description": "MATLAB中使用了cumprod()函数"
+    },
+    {
+      "source": 237,
+      "target": 239,
+      "relationship": "计算",
+      "description": "prod()函数用于计算矩阵元素积"
+    },
+    {
+      "source": 238,
+      "target": 242,
+      "relationship": "计算",
+      "description": "cumprod()函数用于计算累积积"
+    },
+    {
+      "source": 237,
+      "target": 240,
+      "relationship": "计算",
+      "description": "prod()函数可以计算列元素积"
+    },
+    {
+      "source": 237,
+      "target": 241,
+      "relationship": "计算",
+      "description": "prod()函数可以计算行元素积 (通过指定dim参数)"
+    },
+    {
+      "source": 238,
+      "target": 242,
+      "relationship": "计算",
+      "description": "cumprod()函数计算矩阵的累积积"
+    },
+    {
+      "source": 243,
+      "target": 237,
+      "relationship": "展示",
+      "description": "示例3-34展示了prod()函数的应用"
+    },
+    {
+      "source": 243,
+      "target": 238,
+      "relationship": "展示",
+      "description": "示例3-34展示了cumprod()函数的应用"
+    },
+    {
+      "source": 244,
+      "target": 91,
+      "relationship": "计算",
+      "description": "diff()函数用于计算矩阵元素的差分。"
+    },
+    {
+      "source": 244,
+      "target": 245,
+      "relationship": "应用",
+      "description": "diff()函数是进行数值分析的重要工具。"
+    },
+    {
+      "source": 244,
+      "target": 246,
+      "relationship": "应用",
+      "description": "diff()函数是进行信号处理的重要工具。"
+    },
+    {
+      "source": 244,
+      "target": 247,
+      "relationship": "处理",
+      "description": "diff()函数用于处理数据序列，提取数据序列中的变化趋势。"
+    },
+    {
+      "source": 244,
+      "target": 248,
+      "relationship": "提取",
+      "description": "diff()函数通过差分运算提取数据序列中的变化趋势。"
+    },
+    {
+      "source": 244,
+      "target": 249,
+      "relationship": "计算",
+      "description": "diff()函数默认计算一阶差分。"
+    },
+    {
+      "source": 244,
+      "target": 250,
+      "relationship": "计算",
+      "description": "diff()函数可以计算更高阶的差分。"
+    },
+    {
+      "source": 244,
+      "target": 251,
+      "relationship": "参数",
+      "description": "diff()函数使用dim参数指定差分维数。"
+    },
+    {
+      "source": 251,
+      "target": 252,
+      "relationship": "控制",
+      "description": "dim参数控制差分维数，用于计算列差分。"
+    },
+    {
+      "source": 251,
+      "target": 253,
+      "relationship": "控制",
+      "description": "dim参数控制差分维数，用于计算行差分。"
+    },
+    {
+      "source": 254,
+      "target": 244,
+      "relationship": "使用",
+      "description": "例3-35中使用了diff()函数。"
+    },
+    {
+      "source": 255,
+      "target": 82,
+      "relationship": "包含",
+      "description": "MATLAB矩阵分析工具箱包含向量"
+    },
+    {
+      "source": 255,
+      "target": 48,
+      "relationship": "包含",
+      "description": "MATLAB矩阵分析工具箱包含矩阵"
+    },
+    {
+      "source": 256,
+      "target": 257,
+      "relationship": "是",
+      "description": "1阶范数是范数的类型"
+    },
+    {
+      "source": 256,
+      "target": 258,
+      "relationship": "是",
+      "description": "2阶范数是范数的类型"
+    },
+    {
+      "source": 256,
+      "target": 259,
+      "relationship": "是",
+      "description": "∞阶范数是范数的类型"
+    },
+    {
+      "source": 260,
+      "target": 258,
+      "relationship": "关系",
+      "description": "最大奇异值与2阶范数存在关系"
+    },
+    {
+      "source": 261,
+      "target": 48,
+      "relationship": "计算",
+      "description": "秩是矩阵的属性，可以通过计算得到"
+    },
+    {
+      "source": 262,
+      "target": 48,
+      "relationship": "计算",
+      "description": "行列式是矩阵的属性，可以通过计算得到"
+    },
+    {
+      "source": 263,
+      "target": 48,
+      "relationship": "计算",
+      "description": "迹是矩阵的属性，可以通过计算得到"
+    },
+    {
+      "source": 264,
+      "target": 48,
+      "relationship": "是",
+      "description": "化零矩阵是矩阵的一种类型"
+    },
+    {
+      "source": 265,
+      "target": 48,
+      "relationship": "作用于",
+      "description": "orth()函数用于求解矩阵的正交空间"
+    },
+    {
+      "source": 268,
+      "target": 266,
+      "relationship": "计算",
+      "description": "rref()函数用于计算矩阵的约化行阶梯形式"
+    },
+    {
+      "source": 269,
+      "target": 270,
+      "relationship": "计算",
+      "description": "subspace()函数可以计算矩阵间的夹角，用于量化线性相关性"
+    },
+    {
+      "source": 268,
+      "target": 270,
+      "relationship": "量化",
+      "description": "rref()返回的约化形式与矩阵线性相关的程度可以通过subspace()计算矩阵间的夹角来量化"
+    },
+    {
+      "source": 271,
+      "target": 48,
+      "relationship": "涉及",
+      "description": "矩阵分析涉及矩阵"
+    },
+    {
+      "source": 271,
+      "target": 272,
+      "relationship": "涉及",
+      "description": "矩阵分析涉及线性代数运算"
+    },
+    {
+      "source": 273,
+      "target": 8,
+      "relationship": "使用",
+      "description": "矩阵分解在MATLAB中被使用"
+    },
+    {
+      "source": 273,
+      "target": 274,
+      "relationship": "是",
+      "description": "Cholesky分解是矩阵分解的一种"
+    },
+    {
+      "source": 273,
+      "target": 275,
+      "relationship": "是",
+      "description": "LU分解是矩阵分解的一种"
+    },
+    {
+      "source": 273,
+      "target": 276,
+      "relationship": "是",
+      "description": "QR分解是矩阵分解的一种"
+    },
+    {
+      "source": 276,
+      "target": 277,
+      "relationship": "使用",
+      "description": "QR分解可以利用置换矩阵满足特定关系"
+    },
+    {
+      "source": 276,
+      "target": 278,
+      "relationship": "使用",
+      "description": "QR分解可以结合矩阵B进行分解"
+    },
+    {
+      "source": 279,
+      "target": 196,
+      "relationship": "适用于",
+      "description": "舒尔分解适用于方阵"
+    },
+    {
+      "source": 279,
+      "target": 280,
+      "relationship": "分析",
+      "description": "舒尔分解用于分析方阵及其缺陷矩阵"
+    },
+    {
+      "source": 281,
+      "target": 274,
+      "relationship": "对应",
+      "description": "chol()函数对应Cholesky分解"
+    },
+    {
+      "source": 282,
+      "target": 275,
+      "relationship": "对应",
+      "description": "lu()函数对应LU分解"
+    },
+    {
+      "source": 283,
+      "target": 276,
+      "relationship": "对应",
+      "description": "qr()函数对应QR分解"
+    },
+    {
+      "source": 284,
+      "target": 279,
+      "relationship": "对应",
+      "description": "schur()函数对应舒尔分解"
+    },
+    {
+      "source": 285,
+      "target": 286,
+      "relationship": "相关",
+      "description": "特征向量是特征值问题中的解"
+    },
+    {
+      "source": 285,
+      "target": 49,
+      "relationship": "属于",
+      "description": "特征值是线性代数中的概念"
+    },
+    {
+      "source": 286,
+      "target": 49,
+      "relationship": "属于",
+      "description": "特征向量是线性代数中的概念"
+    },
+    {
+      "source": 285,
+      "target": 287,
+      "relationship": "包含",
+      "description": "特征值分解是利用特征值和特征向量进行矩阵分解"
+    },
+    {
+      "source": 287,
+      "target": 48,
+      "relationship": "作用于",
+      "description": "特征值分解用于表示矩阵"
+    },
+    {
+      "source": 8,
+      "target": 288,
+      "relationship": "使用",
+      "description": "MATLAB提供了eig函数用于计算特征值"
+    },
+    {
+      "source": 8,
+      "target": 289,
+      "relationship": "使用",
+      "description": "MATLAB提供了balance函数用于寻找平衡矩阵"
+    },
+    {
+      "source": 8,
+      "target": 290,
+      "relationship": "使用",
+      "description": "MATLAB提供了eigs函数用于计算部分特征值"
+    },
+    {
+      "source": 8,
+      "target": 291,
+      "relationship": "使用",
+      "description": "MATLAB提供了condeig函数用于计算特征值条件数"
+    },
+    {
+      "source": 285,
+      "target": 287,
+      "relationship": "相关",
+      "description": "特征值是特征值分解的基础"
+    },
+    {
+      "source": 286,
+      "target": 287,
+      "relationship": "相关",
+      "description": "特征向量是特征值分解的关键组成部分"
+    },
+    {
+      "source": 8,
+      "target": 292,
+      "relationship": "使用",
+      "description": "MATLAB采用一种存储策略用于稀疏矩阵。"
+    },
+    {
+      "source": 293,
+      "target": 292,
+      "relationship": "应用于",
+      "description": "存储策略应用于稀疏矩阵。"
+    },
+    {
+      "source": 293,
+      "target": 219,
+      "relationship": "存储",
+      "description": "存储策略仅存储非零元素。"
+    },
+    {
+      "source": 293,
+      "target": 294,
+      "relationship": "存储",
+      "description": "存储策略同时存储行列位置信息。"
+    },
+    {
+      "source": 292,
+      "target": 295,
+      "relationship": "对比",
+      "description": "稀疏存储方式与完全存储方式对比。"
+    },
+    {
+      "source": 296,
+      "target": 297,
+      "relationship": "表示",
+      "description": "稀疏存储方式使用行和列表示元素位置。"
+    },
+    {
+      "source": 296,
+      "target": 298,
+      "relationship": "基于",
+      "description": "稀疏存储方式基于位置为索引。"
+    },
+    {
+      "source": 8,
+      "target": 292,
+      "relationship": "提供",
+      "description": "MATLAB提供了创建稀疏矩阵的方法"
+    },
+    {
+      "source": 8,
+      "target": 299,
+      "relationship": "使用",
+      "description": "MATLAB使用sparse函数创建稀疏矩阵"
+    },
+    {
+      "source": 299,
+      "target": 292,
+      "relationship": "创建",
+      "description": "sparse函数用于创建稀疏矩阵"
+    },
+    {
+      "source": 8,
+      "target": 300,
+      "relationship": "使用",
+      "description": "MATLAB使用full()函数将稀疏矩阵转换回满矩阵"
+    },
+    {
+      "source": 292,
+      "target": 301,
+      "relationship": "是",
+      "description": "单位稀疏矩阵是稀疏矩阵的一种"
+    },
+    {
+      "source": 292,
+      "target": 302,
+      "relationship": "计算",
+      "description": "可以通过计算非零元素密度来描述稀疏矩阵"
+    },
+    {
+      "source": 292,
+      "target": 303,
+      "relationship": "观察",
+      "description": "可以使用spy()函数观察稀疏矩阵中非零元素的分布情况"
+    },
+    {
+      "source": 304,
+      "target": 305,
+      "relationship": "依赖",
+      "description": "只要其中任何一个矩阵为满矩阵，其结果必定为满矩阵。"
+    },
+    {
+      "source": 304,
+      "target": 292,
+      "relationship": "结果",
+      "description": "运算结果可能呈现为稀疏矩阵或满矩阵。"
+    },
+    {
+      "source": 304,
+      "target": 306,
+      "relationship": "包含",
+      "description": "矩阵的加减乘除运算包含矩阵的数乘和幂运算。"
+    },
+    {
+      "source": 305,
+      "target": 292,
+      "relationship": "存在于",
+      "description": "输入矩阵中满矩阵的存在决定了运算结果的类型。"
+    },
+    {
+      "source": 292,
+      "target": 292,
+      "relationship": "生成",
+      "description": "稀疏矩阵的数乘和幂运算始终会生成稀疏矩阵。"
+    }
+  ],
+  "entity_count": 402,
+  "relation_count": 363
+}
