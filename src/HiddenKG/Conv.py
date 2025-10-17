@@ -3,21 +3,17 @@
 HiddenKG 第一步：Contextual-based Convolution（conv）
 
 输出：
-  - HiddenKG/output/conv_entities.json  （仅此一个结果文件）
+  - HiddenKG/output/conv_entities.json
 
 日志：
-  - HiddenKG/logs/conv.log  （与 Conv.py 同级的 logs 目录）
+  - HiddenKG/logs/conv.log  （详细）
+  - 终端：仅必要信息 + 进度条
 
-特性：
-  1) 融合两类邻居：同小节共现 + 显式KG (ExplicitKG/output/explicit_kg.json)
-  2) 结构化 Prompt：邻居含关系与方向，面向中文、200–300字
-  3) LLM 调用仅校验 API_BASE；API_KEY 可为空（本地网关可无鉴权）
-  4) 支持限速(QPS)、固定节流、指数退避重试
-  5) 仅输出一个结果文件；详细日志落盘，控制台简要进度
-
-依赖配置（均已封装在 HiddenKG/config）：
-  - APIConfig：API_BASE、API_KEY、MODEL_NAME 等
-  - Conv：FILE_TOC_ENT_REL、FILE_EXPLICIT_KG、FILE_CONV_RESULT、温度/超时/重试/上限等
+依赖：
+  - HiddenKG/config/config.yaml（通过 include_files 引入 config/conv.yaml）
+  - 需要 config 内含:
+      APIConfig: { API_BASE, API_KEY, MODEL_NAME, TIMEOUT_SECS(可选) }
+      ConvConfig: 见 conv.yaml
 """
 
 from __future__ import annotations
@@ -25,33 +21,88 @@ from __future__ import annotations
 import json
 import time
 import logging
-from dataclasses import dataclass, asdict
-from typing import Dict, List, Tuple, Any, DefaultDict, Optional
 import requests
-import os
-from pathlib import Path
-import shutil
-from collections import defaultdict
 import re
+import os
 import threading
+from dataclasses import dataclass, asdict
+from pathlib import Path
+from typing import Dict, List, Tuple, Any, DefaultDict, Optional
+from collections import defaultdict
+import yaml
+from tqdm import tqdm
+import sys
 
-# === 导入配置（不使用别名，命名空间清晰） ===
-from HiddenKG.config import APIConfig, Conv
+# ========== 配置加载 ==========
+def load_config(config_file: Path) -> dict:
+    with config_file.open("r", encoding="utf-8") as f:
+        base = yaml.safe_load(f) or {}
+    if "include_files" in base:
+        merged = dict(base)
+        for rel in base["include_files"]:
+            inc_path = (config_file.parent / rel).resolve()
+            with inc_path.open("r", encoding="utf-8") as ff:
+                part = yaml.safe_load(ff) or {}
+            merged.update(part)
+        return merged
+    return base
 
-# ========== 日志配置 ==========
-LOG_DIR = Path(__file__).resolve().parent / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
-LOG_PATH = LOG_DIR / "conv.log"
+# 当前模块目录：src/HiddenKG
+script_dir = Path(__file__).resolve().parent
+config_file = script_dir / "config" / "config.yaml"
+config = load_config(config_file)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[
-        logging.FileHandler(LOG_PATH, encoding="utf-8"),
-        logging.StreamHandler()
-    ]
-)
+APIConfig = config.get("APIConfig", {})
+ConvConfig = config.get("ConvConfig", {})
+
+# 目录
+hidden_dir = script_dir                                 # src/HiddenKG
+explicit_dir = script_dir.parent / "ExplicitKG"         # src/ExplicitKG
+hidden_output_dir = hidden_dir / "output"
+hidden_logs_dir = hidden_dir / "logs"
+explicit_output_dir = explicit_dir / "output"
+hidden_output_dir.mkdir(parents=True, exist_ok=True)
+hidden_logs_dir.mkdir(parents=True, exist_ok=True)
+
+# 文件路径
+FILE_TOC_ENT_REL = explicit_output_dir / ConvConfig.get("TOC_ENT_REL_NAME", "toc_with_entities_and_relations.json")
+FILE_CONV_RESULT = hidden_output_dir / ConvConfig.get("CONV_RESULT_NAME", "conv_entities.json")
+FILE_CONV_PROMPTS = hidden_output_dir / ConvConfig.get("CONV_PROMPTS_NAME", "conv_prompts.json")  # 若后续需要可写
+
+# 运行参数
+TEMPERATURE = float(ConvConfig.get("TEMPERATURE", 0.2))
+MAX_TOKENS = int(ConvConfig.get("MAX_TOKENS", 300))
+API_TIMEOUT = int(ConvConfig.get("API_TIMEOUT", 120))
+RETRIES = int(ConvConfig.get("RETRIES", 3))
+CHAT_COMPLETIONS_PATH = ConvConfig.get("CHAT_COMPLETIONS_PATH", "/chat/completions")
+RATE_LIMIT_QPS = float(ConvConfig.get("RATE_LIMIT_QPS", 0))
+EXTRA_THROTTLE_SEC = float(ConvConfig.get("EXTRA_THROTTLE_SEC", 0.0))
+RETRY_BACKOFF_BASE = float(ConvConfig.get("RETRY_BACKOFF_BASE", 1.8))
+MAX_NEIGHBORS_GLOBAL = int(ConvConfig.get("MAX_NEIGHBORS_GLOBAL", 30))
+DRY_RUN = bool(ConvConfig.get("DRY_RUN", False))
+
+# ========== 日志 ==========
+LOG_PATH = hidden_logs_dir / "conv.log"
+# 文件日志：INFO 级别（详细）
+file_handler = logging.FileHandler(LOG_PATH, encoding="utf-8")
+file_handler.setLevel(logging.INFO)
+file_handler.setFormatter(logging.Formatter("%(asctime)s [%(levelname)s] %(message)s"))
+
+# 控制台日志：WARNING（仅必要信息；进度条由 tqdm 负责）
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.WARNING)
+console_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
+
 logger = logging.getLogger("Conv")
+logger.setLevel(logging.INFO)
+# 防止重复添加
+if not logger.handlers:
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
+else:
+    logger.handlers.clear()
+    logger.addHandler(file_handler)
+    logger.addHandler(console_handler)
 
 # ========== 数据结构 ==========
 @dataclass
@@ -64,7 +115,7 @@ class Occurrence:
 @dataclass
 class Neighbor:
     name: str
-    snippet: str = ""  # 关系描述（可能含关系类型与方向：type|in/out）
+    snippet: str = ""  # 关系描述（同小节摘要或短文本）
 
 @dataclass
 class EntityItem:
@@ -76,60 +127,7 @@ class EntityItem:
     neighbors: List[Neighbor]
     updated_description: str = ""
 
-# ========== 读取显式KG邻居 ==========
-def load_graph_neighbors(file_path: Path) -> Dict[str, List[Neighbor]]:
-    """
-    从 explicit_kg.json 构建邻接映射：
-      - 对每条有向边 src->dst，生成 src: (dst, type|out) 与 dst: (src, type|in)
-    """
-    if not file_path.exists():
-        logger.warning(f"显式KG文件缺失：{file_path}")
-        return {}
-
-    with file_path.open("r", encoding="utf-8") as f:
-        kg = json.load(f)
-
-    edges = kg.get("edges") or kg.get("E") or []
-    nodes = kg.get("nodes") or kg.get("V") or []
-    id2name = {n.get("id", n.get("name")): n.get("name", n.get("title")) for n in nodes}
-
-    adj: DefaultDict[str, List[Neighbor]] = defaultdict(list)
-
-    def _add(a, b, r, d):
-        if a and b:
-            adj[a].append(Neighbor(name=b, snippet=f"{r}|{d}"))
-
-    for e in edges:
-        src = id2name.get(e.get("src") or e.get("source"))
-        dst = id2name.get(e.get("dst") or e.get("target"))
-        r = e.get("type") or e.get("label") or "related"
-        _add(src, dst, r, "out")
-        _add(dst, src, r, "in")
-
-    return adj
-
-# ========== 进度条 ==========
-def _format_time(seconds: float) -> str:
-    seconds = max(0, int(seconds))
-    h, rem = divmod(seconds, 3600)
-    m, s = divmod(rem, 60)
-    return f"{h:d}h{m:02d}m{s:02d}s" if h else (f"{m:d}m{s:02d}s" if m else f"{s:d}s")
-
-def _render_progress(done: int, total: int, start_ts: float, desc="conv") -> None:
-    cols = shutil.get_terminal_size((100, 20)).columns
-    pct = 0.0 if total == 0 else done / total
-    bar_len = max(10, min(40, cols - 40))
-    filled = int(bar_len * pct)
-    bar = "█" * filled + "░" * (bar_len - filled)
-    elapsed = time.time() - start_ts
-    rate = elapsed / done if done > 0 else None
-    eta = (total - done) * rate if rate else 0.0
-    print(f"\r[{desc}] {done:>4d}/{total:<4d} |{bar}| {pct*100:6.2f}% "
-          f"Elapsed: {_format_time(elapsed)}  ETA: {_format_time(eta)}", end="", flush=True)
-    if done == total:
-        print()
-
-# ========== 收集实体 & 邻居融合 ==========
+# ========== TOC 遍历与实体读取 ==========
 def _iter_toc_nodes(toc: List[Dict[str, Any]], parent_path=""):
     for node in toc:
         title = node.get("title", "")
@@ -140,15 +138,16 @@ def _iter_toc_nodes(toc: List[Dict[str, Any]], parent_path=""):
         for child in node.get("children", []) or []:
             yield from _iter_toc_nodes([child], path)
 
-def load_entities_from_toc(file_path: Path, explicit_file: Path) -> Dict[str, EntityItem]:
-    """从 toc_with_entities_and_relations.json 构建实体，并融合两类邻居"""
+def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
+    """
+    仅从 TOC 读取实体与“同小节共现邻居”。
+    """
     with file_path.open("r", encoding="utf-8") as f:
         toc = json.load(f)
 
     entities: Dict[str, EntityItem] = {}
     leaf_entities: Dict[str, List[Tuple[str, str]]] = {}
 
-    # 逐小节收集实体、出现位置
     for node, path, node_id, level in _iter_toc_nodes(toc):
         ents = node.get("entities") or []
         if not ents:
@@ -165,7 +164,7 @@ def load_entities_from_toc(file_path: Path, explicit_file: Path) -> Dict[str, En
             entities[name].occurrences.append(Occurrence(path, node_id, level, node.get("title", "")))
             leaf_entities.setdefault(node_id, []).append((name, original))
 
-    # 邻居1：同小节共现
+    # 邻居：同小节共现
     for node_id, name_list in leaf_entities.items():
         for name, _ in name_list:
             neighbor_map = {n.name: n for n in entities[name].neighbors}
@@ -173,18 +172,10 @@ def load_entities_from_toc(file_path: Path, explicit_file: Path) -> Dict[str, En
                 if n_name == name:
                     continue
                 neighbor_map.setdefault(n_name, Neighbor(n_name, (n_snip or "")[:100]))
-            entities[name].neighbors = list(neighbor_map.values())
+            # 限额
+            entities[name].neighbors = list(neighbor_map.values())[:MAX_NEIGHBORS_GLOBAL]
 
-    # 邻居2：显式KG
-    graph_adj = load_graph_neighbors(explicit_file)
-    for name, item in entities.items():
-        explicit_nbs = graph_adj.get(name, [])
-        neighbor_map = {n.name: n for n in item.neighbors}
-        for nb in explicit_nbs:
-            neighbor_map[nb.name] = nb
-        # 全局邻居上限
-        item.neighbors = list(neighbor_map.values())[:Conv.MAX_NEIGHBORS_GLOBAL]
-
+    logger.info(f"[TOC] 加载实体 {len(entities)} 个；来自文件：{file_path}")
     return entities
 
 # ========== Prompt ==========
@@ -198,17 +189,12 @@ def build_user_prompt(entity: EntityItem) -> str:
     neighbor_lines = []
     for nb in entity.neighbors:
         snip = (nb.snippet or "").replace("\n", " ").strip()
-        if "|" in snip:
-            r, d, *_ = snip.split("|")
-            neighbor_lines.append(f"- {nb.name}（关系: {r}, 方向: {d}）")
-        elif snip:
-            neighbor_lines.append(f"- {nb.name}：{snip}")
-        else:
-            neighbor_lines.append(f"- {nb.name}")
+        neighbor_lines.append(f"- {nb.name}：{snip}" if snip else f"- {nb.name}")
     occ_str = "; ".join([o.path for o in entity.occurrences[:3]])
     return (
         f"目标实体：{entity.name}\n"
         f"原始描述：{entity.original or '（无描述）'}\n"
+        f"出现位置：{occ_str or '（无）'}\n"
         f"邻域实体：\n" + "\n".join(neighbor_lines) + "\n"
         "任务：基于上下文生成增强描述，聚焦其定义、作用及与邻域的关系。\n"
         "请返回JSON：{\"name\": \"实体名\", \"updated_description\": \"增强后的描述\"}"
@@ -217,7 +203,7 @@ def build_user_prompt(entity: EntityItem) -> str:
 # ========== 限速 ==========
 _rate_lock = threading.Lock()
 _last_ts = 0.0
-_min_interval = (1.0 / Conv.RATE_LIMIT_QPS) if Conv.RATE_LIMIT_QPS > 0 else 0.0
+_min_interval = (1.0 / RATE_LIMIT_QPS) if RATE_LIMIT_QPS > 0 else 0.0
 
 def _rate_limit_block():
     if _min_interval <= 0:
@@ -233,61 +219,60 @@ def _rate_limit_block():
 # ========== LLM 调用 ==========
 def call_llm(system_prompt: str, user_prompt: str) -> str:
     """调用 OpenAI 兼容 /chat/completions；支持无鉴权本地网关"""
-    if Conv.DRY_RUN:
+    if DRY_RUN:
         return ""
 
-    if not APIConfig.API_BASE:
+    api_base = APIConfig.get("API_BASE", "")
+    if not api_base:
         logger.warning("API_BASE 为空，跳过 LLM 调用。")
         return ""
 
     headers = {"Content-Type": "application/json"}
-    if getattr(APIConfig, "API_KEY", None):
-        headers["Authorization"] = f"Bearer {APIConfig.API_KEY}"
+    api_key = APIConfig.get("API_KEY")
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     payload = {
-        "model": APIConfig.MODEL_NAME,
+        "model": APIConfig.get("MODEL_NAME", ""),
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        "temperature": Conv.TEMPERATURE,
-        "max_tokens": Conv.MAX_TOKENS
+        "temperature": TEMPERATURE,
+        "max_tokens": MAX_TOKENS
     }
 
     last_err: Optional[Exception] = None
-    for k in range(Conv.RETRIES):
+    for k in range(RETRIES):
         try:
             _rate_limit_block()
-            if Conv.EXTRA_THROTTLE_SEC > 0:
-                time.sleep(Conv.EXTRA_THROTTLE_SEC)
+            if EXTRA_THROTTLE_SEC > 0:
+                time.sleep(EXTRA_THROTTLE_SEC)
 
             resp = requests.post(
-                f"{APIConfig.API_BASE}{Conv.CHAT_COMPLETIONS_PATH}",
+                f"{api_base}{CHAT_COMPLETIONS_PATH}",
                 headers=headers,
                 json=payload,
-                timeout=Conv.API_TIMEOUT
+                timeout=API_TIMEOUT
             )
             resp.raise_for_status()
             return resp.json()["choices"][0]["message"]["content"].strip()
         except Exception as e:
             last_err = e
-            logger.warning(f"LLM 调用失败({k+1}/{Conv.RETRIES})：{e}")
-            time.sleep(Conv.RETRY_BACKOFF_BASE ** k)
+            logger.warning(f"LLM 调用失败({k+1}/{RETRIES})：{e}")
+            time.sleep(RETRY_BACKOFF_BASE ** k)
     logger.error(f"LLM 请求失败：{last_err}")
     return ""
 
 # ========== 解析与清洗 ==========
 def safe_json_loads(txt: str) -> Dict[str, Any]:
-    """安全解析：优先直解析→平层正则→外层截取"""
     if not txt or not isinstance(txt, str):
         return {}
     txt = txt.strip()
-    # 1) 直接解析
     try:
         return json.loads(txt)
     except Exception:
         pass
-    # 2) 平层 JSON 对象
     candidates = re.findall(r"\{[^{}]*\}", txt)
     for c in candidates:
         try:
@@ -296,7 +281,6 @@ def safe_json_loads(txt: str) -> Dict[str, Any]:
                 return obj
         except Exception:
             continue
-    # 3) 外层截取
     start, end = txt.find("{"), txt.rfind("}")
     if start != -1 and end != -1 and end > start:
         segment = txt[start:end + 1]
@@ -322,25 +306,18 @@ def _enforce_len_200_300(s: str) -> str:
 
 # ========== 主流程 ==========
 def run_conv():
-    Conv.ensure_paths()
-
-    toc_path = Conv.FILE_TOC_ENT_REL
-    explicit_path = Conv.FILE_EXPLICIT_KG
-
-    if not toc_path.exists():
+    if not FILE_TOC_ENT_REL.exists():
         raise FileNotFoundError(
-            f"未找到 toc_with_entities_and_relations.json：{toc_path}\n"
-            f"（可用环境变量 CONV_TOC_ENT_REL 覆盖路径）"
+            f"未找到 toc_with_entities_and_relations.json：{FILE_TOC_ENT_REL}\n"
+            f"（文件名在 ConvConfig.TOC_ENT_REL_NAME；路径已自动拼接为 ExplicitKG/output 下）"
         )
-    if not explicit_path.exists():
-        logger.warning(f"显式KG未找到：{explicit_path}（可用 CONV_EXPLICIT_KG 覆盖）")
 
+    print(f"▶ 开始 Conv：{FILE_TOC_ENT_REL.name}")
     logger.info("开始运行 Contextual-based Convolution（conv）阶段")
-    logger.info(f"输入文件: {toc_path}")
-    logger.info(f"显式KG文件: {explicit_path}")
+    logger.info(f"输入文件: {FILE_TOC_ENT_REL}")
 
-    # 1) 加载实体与邻居
-    entities = load_entities_from_toc(toc_path, explicit_path)
+    # 1) 加载实体与邻居（仅同小节共现）
+    entities = load_entities_from_toc(FILE_TOC_ENT_REL)
 
     # 2) 生成增强描述
     system_prompt = build_system_prompt()
@@ -350,13 +327,11 @@ def run_conv():
     items = list(entities.items())[:limit] if limit else list(entities.items())
     total = len(items)
     start_ts = time.time()
-
     logger.info(f"共加载 {total} 个实体，开始调用 LLM 生成增强描述...")
 
-    for idx, (name, item) in enumerate(items, 1):
-        _render_progress(idx - 1, total, start_ts)
+    # 进度条（只在终端展示）
+    for name, item in tqdm(items, desc="LLM 生成增强描述", ncols=90, file=sys.stdout):
         user_prompt = build_user_prompt(item)
-
         content = call_llm(system_prompt, user_prompt)
         obj = safe_json_loads(content)
         upd = (obj.get("updated_description") or "").strip() or item.original or f"{name}：暂无描述。"
@@ -372,18 +347,19 @@ def run_conv():
             "occurrences": [asdict(o) for o in item.occurrences],
             "neighbors": [asdict(nb) for nb in item.neighbors]
         }
+        logger.info(f"[conv] {name} 生成成功。")
 
-        logger.info(f"[{idx}/{total}] {name} 生成成功。")
-
-    # 3) 输出结果（仅一个文件）
-    with Conv.FILE_CONV_RESULT.open("w", encoding="utf-8") as f:
+    # 3) 输出结果
+    FILE_CONV_RESULT.parent.mkdir(parents=True, exist_ok=True)
+    with FILE_CONV_RESULT.open("w", encoding="utf-8") as f:
         json.dump(results, f, ensure_ascii=False, indent=2)
 
     duration = round(time.time() - start_ts, 2)
     logger.info(f"Conv 阶段完成，共处理 {len(results)} 个实体。")
-    logger.info(f"输出文件: {Conv.FILE_CONV_RESULT}")
+    logger.info(f"输出文件: {FILE_CONV_RESULT}")
     logger.info(f"总耗时: {duration} 秒")
-    print(f"\n✅ Conv 阶段完成，日志写入: {LOG_PATH}")
+    print(f"✅ Conv 完成：{len(results)} 个实体，耗时 {duration} s  →  {FILE_CONV_RESULT}")
+    print(f"📝 详细日志：{LOG_PATH}")
 
 # ========== CLI ==========
 if __name__ == "__main__":
