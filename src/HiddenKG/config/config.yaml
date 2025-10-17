@@ -1,0 +1,17 @@
+# HiddenKG/config/config.yaml
+
+# —— 设备配置（你在代码里用它来决定 cuda / cpu）——
+# 建议：在代码里如果 DEVICE=="auto" 就根据 CUDA_VISIBLE_DEVICES 自动判断；
+# 想强制用某个设备就填 "cuda" 或 "cpu"
+DEVICE: "cpu"
+
+TOC_GRAPH_NAME: "toc_graph.json"
+
+# 继承 ExplicitKG 的 APIConfig（API_BASE / API_KEY / MODEL_NAME / TIMEOUT_SECS）
+include_files:
+  - "../../ExplicitKG/config/config.yaml"
+  - "conv.yaml"
+  - "aggr.yaml"
+  - "emb.yaml"
+  - "dedup.yaml"
+  - "pred.yaml"
