@@ -80,6 +80,13 @@ TreeKG 项目旨在构建一个基于教科书的知识图谱，使用显式和�
 
 ## 运行步骤
 
+### 准备数据与模型
+
+- 将**教材源文件**（PDF/Docx 等）放到：`src/ExplicitKG/output/`
+  
+- 将 **BERT 模型文件夹** 放到：`src/HiddenKG/model/`  
+  （例如：`src/HiddenKG/model/bert-base-chinese/`，内部包含 `config.json`, `pytorch_model.bin`, `vocab.txt` 等）
+
 1. **运行 `ExplicitKG` 阶段**：
    - 执行 `ExplicitKG` 下的 `main.py`，该文件负责数据预处理、实体提取和关系提取。
 
@@ -97,10 +104,6 @@ TreeKG 项目旨在构建一个基于教科书的知识图谱，使用显式和�
 
 ---
 
-### 准备数据与模型
-- 将**教材源文件**（PDF/Docx 等）放到：`src/ExplicitKG/output/`
-- 将 **BERT 模型文件夹** 放到：`src/HiddenKG/model/`  
-  （例如：`src/HiddenKG/model/bert-base-chinese/`，内部包含 `config.json`, `pytorch_model.bin`, `vocab.txt` 等）
 
 ## 如何运行：
 
