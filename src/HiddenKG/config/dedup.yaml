@@ -1,0 +1,58 @@
+DedupConfig:
+  # —— I/O（只保留文件名；代码里统一拼到 HiddenKG/output 下）——
+  ENTITIES_AGGR_NAME: "aggr_entities.json"    # 若存在优先用它
+  ENTITIES_CONV_NAME: "conv_entities.json"    # 否则回退到它
+  EMBEDDINGS_NAME: "node_embeddings.pkl"
+  RESULT_NAME: "dedup_result.json"
+  ENCODING: "utf-8"
+
+  # —— KNN 搜索 ——
+  KNN_NEIGHBORS: 20
+  DIST_THRESHOLD: 0.55
+  MUTUAL_KNN: true
+  RANK_TOP: 12           # 实际取近邻排名 1..11
+
+  # —— 过滤策略 ——
+  STRICT_SAME_ROLE: false
+  USE_NAME_JACCARD: true
+  NAME_JACCARD_MIN: 0.25
+  NAME_MODE: "auto"      # token|char|bigram|auto
+  PER_NODE_CAP: 30
+  MAX_NEIGHBORS_GLOBAL: 30
+
+  # —— LLM 调用与并发 ——
+  TEMPERATURE: 0.0
+  MAX_TOKENS: 128
+  LLM_WORKERS: 6
+  API_TIMEOUT: 120
+  RETRIES: 3
+  CHAT_COMPLETIONS_PATH: "/chat/completions"
+  RATE_LIMIT_QPS: 0
+  EXTRA_THROTTLE_SEC: 0.0
+  RETRY_BACKOFF_BASE: 1.8
+
+  # —— 其他优化 ——
+  USE_ALIAS_FASTPATH: false
+  TRUNCATE_DESC: false
+  DESC_MAXLEN: 120
+  DRY_RUN: false
+
+  # —— Prompt 模板 —— #
+  LLM_SYSTEM_PROMPT: |
+    你是“MATLAB科学计算课程知识图谱专家”，擅长实体消歧。
+    仅基于实体的名称、角色、描述判断是否为同一概念，输出严格 JSON，不要多余文本。
+
+  LLM_USER_PROMPT: |
+    ### 实体1
+    - 名称：{name_a}
+    - 角色：{role_a}
+    - 描述：{desc_a}
+
+    ### 实体2
+    - 名称：{name_b}
+    - 角色：{role_b}
+    - 描述：{desc_b}
+
+    ### 任务
+    判断两个实体是否为同一概念，输出 JSON（严格按键名）：
+    {schema}
