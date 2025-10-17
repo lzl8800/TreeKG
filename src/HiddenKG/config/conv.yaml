@@ -1,0 +1,26 @@
+# HiddenKG/config/conv.yaml
+ConvConfig:
+  # —— I/O（只保留文件名；路径由代码拼接）——
+  TOC_ENT_REL_NAME: "toc_with_entities_and_relations.json"  # 来自 ExplicitKG/output
+
+  CONV_RESULT_NAME: "conv_entities.json"    # 输出到 HiddenKG/output
+  # 如需保留调试/审计的提示词，可打开此项（主代码中可选择是否写入）
+  CONV_PROMPTS_NAME: "conv_prompts.json"
+
+  # —— 邻域控制 ——
+  MAX_NEIGHBORS_GLOBAL: 30
+
+  # —— LLM / 超时 / 重试（默认值；可被环境变量覆盖）——
+  TEMPERATURE: 0.2
+  MAX_TOKENS: 300
+  API_TIMEOUT: 120
+  RETRIES: 3
+  CHAT_COMPLETIONS_PATH: "/chat/completions"
+
+  # —— 速率限制（可选）——
+  RATE_LIMIT_QPS: 0
+  EXTRA_THROTTLE_SEC: 0.0
+  RETRY_BACKOFF_BASE: 1.8
+
+  # —— 其他开关 ——
+  DRY_RUN: false
