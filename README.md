@@ -97,32 +97,10 @@ TreeKG 项目旨在构建一个基于教科书的知识图谱，使用显式和�
 
 
 ### 输出：
-最终生成的知识图谱文件为 **`final_kg.json`**，格式为标准的 **G=(V, E)** 知识图谱，其中：
+最终生成的知识图谱文件为 **`final_kg.json`**，在 `src/HiddenKG/output` 文件夹中，格式为标准的 **G=(V, E)** 知识图谱，其中：
 - **V**：包含 TOC 节点和实体节点。
 - **E**：包含 TOC 节点之间、TOC 节点与实体节点之间的边。
 
----
-
-
-## 如何运行：
-
-1. 确保已经安装了所有必要的依赖：
-   
-
-
-2. 在命令行中运行以下命令：
-   - **运行 `ExplicitKG` 阶段**：
-     ```bash
-     python src/ExplicitKG/main.py
-     ```
-
-   - **运行 `HiddenKG` 阶段**：
-     ```bash
-     python src/HiddenKG/main.py
-     ```
-
-### 结果：
-- 输出文件 **`final_kg.json`** 将保存在 `src/HiddenKG/output` 文件夹中。
 
 ---
 
