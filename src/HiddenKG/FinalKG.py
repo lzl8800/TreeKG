@@ -1,9 +1,8 @@
+from typing import Dict, List, Tuple
 import json
 import os
-from typing import Dict, List, Tuple
 from ExplicitKG.config.config import OUTPUT_DIR as EXPLICIT_OUTPUT_DIR  # ExplicitKG的OUTPUT_DIR
 from HiddenKG.config.config import OUTPUT_DIR as HIDDEN_OUTPUT_DIR  # HiddenKG的OUTPUT_DIR
-
 
 # 读取实体文件并解析成对象
 def read_entities(infile: str):
@@ -19,9 +18,16 @@ def read_toc(infile: str):
     return data
 
 
+# 读取pred_result文件
+def read_pred_result(infile: str):
+    with open(infile, 'r', encoding='utf-8') as f:
+        data = json.load(f)
+    return data.get("edges", [])
+
+
 # 提取核心节点和边
 def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
-    List[Dict], List[Dict], int, int, int, int, bool]:
+    List[Dict], List[Dict], int, int, int, int]:
     core_nodes = []
     edges = []
     toc_nodes = toc_data.get("nodes", [])
@@ -32,10 +38,15 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
 
     core_count = 0
     non_core_count = 0
-    core_found_toc_connection = True  # 标记是否所有核心节点都找到 TOC 连接
 
     # 创建名称到节点 ID 的映射
     toc_name_to_id = {node['name']: node['id'] for node in toc_nodes}
+
+    # 为所有节点分配唯一的 ID
+    node_id_counter = 1
+
+    # 计数没有找到连接的核心节点数量
+    unconnected_core_count = 0
 
     # 提取核心节点
     for entity_name, entity in entities.items():
@@ -44,17 +55,43 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
             continue
 
         node = {
-            "id": len(core_nodes) + 1,  # 为核心节点分配新的 ID
+            "id": node_id_counter,  # 为核心节点分配新的唯一 ID
             "name": entity["name"],
             "type": entity.get("type", ""),
             "description": entity.get("updated_description", entity.get("original", ""))
         }
+        node_id_counter += 1  # 每分配一个 ID，递增
 
         if entity.get("role") == "core":
             core_nodes.append(node)
             core_count += 1
         else:
             non_core_count += 1
+
+        # 查找每个core节点对应的TOC小节
+        core_node = node
+        connected_to_toc = False  # 标记该核心节点是否连接到TOC
+
+        for occurrence in entity.get("occurrences", []):
+            occurrence_title = occurrence.get("title", "")
+            if occurrence_title:
+                # 根据occurrences中的title找到对应的TOC节点
+                for toc_node in toc_nodes:
+                    if toc_node["title"] == occurrence_title:  # 完全匹配
+                        edge = {
+                            "source": toc_node["id"],
+                            "target": core_node["id"],
+                            "relationship": "core-toc",  # core节点与TOC节点之间的关系
+                            "relation_type": "所属小节"
+                        }
+                        edges.append(edge)
+                        connected_to_toc = True
+                        break  # 找到匹配的小节就跳出循环
+
+        # 如果核心节点没有找到匹配的TOC节点，更新未连接核心节点计数
+        if not connected_to_toc:
+            unconnected_core_count += 1
+            print(f"核心节点 '{core_node['name']}' 没有找到TOC连接")  # 只打印没有找到连接的核心节点
 
         # 处理实体的邻居，提取边
         for neighbor in entity.get("neighbors", []):
@@ -90,15 +127,32 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
                 connected_to_toc = True
 
         if not connected_to_toc:
-            core_found_toc_connection = False
+            unconnected_core_count += 1
 
-    return toc_nodes + core_nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count, core_found_toc_connection
+    # 为TOC节点分配唯一ID
+    for toc_node in toc_nodes:
+        toc_node["id"] = node_id_counter
+        node_id_counter += 1
+
+    return toc_nodes + core_nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count
 
 
 # 将数据转换为标准的知识图谱格式并保存
-def convert_to_kg_format(entities: Dict[str, Dict], toc_data: Dict, out_path: str):
-    nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count, core_found_toc_connection = extract_core_and_edges(
+def convert_to_kg_format(entities: Dict[str, Dict], toc_data: Dict, pred_edges: List[Dict], out_path: str):
+    # 提取核心节点和边
+    nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count = extract_core_and_edges(
         entities, toc_data)
+
+    # 将TOC的节点和边完全合并到最终的节点和边中
+    toc_nodes = toc_data.get("nodes", [])
+    toc_edges = toc_data.get("edges", [])
+
+    # 确保TOC节点和边被完整合并
+    nodes.extend(toc_nodes)
+    edges.extend(toc_edges)
+
+    # 合并 pred_result 中的边数据
+    edges.extend(pred_edges)
 
     # 构建知识图谱格式的 JSON
     kg = {
@@ -110,14 +164,13 @@ def convert_to_kg_format(entities: Dict[str, Dict], toc_data: Dict, out_path: st
     with open(out_path, "w", encoding="utf-8") as f:
         json.dump(kg, f, ensure_ascii=False, indent=2)
 
-    # 打印统计信息
+    # 打印统计信息并加入到最终生成的文件中
     print(f"知识图谱文件已保存至：{os.path.abspath(out_path)}")
     print(f"TOC 层节点数量：{toc_node_count}")
     print(f"TOC 层边数量：{toc_edge_count}")
     print(f"核心节点数量：{core_count}")
     print(f"非核心节点数量：{non_core_count}")
     print(f"总边数量：{len(edges)}")
-    print(f"是否所有核心节点都找到TOC连接：{'是' if core_found_toc_connection else '否'}")
 
 
 # 主流程
@@ -125,6 +178,7 @@ def main():
     # 输入输出文件路径（通过 config.py 配置）
     entities_in = HIDDEN_OUTPUT_DIR / "dedup_result.json"  # 这里填入你的结果文件路径
     toc_in = EXPLICIT_OUTPUT_DIR / "toc_graph.json"  # TOC 文件路径
+    pred_in = HIDDEN_OUTPUT_DIR / "pred_result.json"  # Pred 结果文件路径
     output_path = HIDDEN_OUTPUT_DIR / "final_kg.json"  # 输出的知识图谱文件路径
 
     # 读取结果文件
@@ -133,8 +187,11 @@ def main():
     # 读取TOC数据
     toc_data = read_toc(toc_in)
 
+    # 读取Pred结果文件
+    pred_edges = read_pred_result(pred_in)
+
     # 转换为知识图谱格式并保存
-    convert_to_kg_format(entities, toc_data, output_path)
+    convert_to_kg_format(entities, toc_data, pred_edges, output_path)
 
 
 if __name__ == "__main__":
