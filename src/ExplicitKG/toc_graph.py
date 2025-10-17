@@ -42,49 +42,40 @@ def process_section(section, nodes, edges, entity_count, relation_count, node_id
     """递归处理每一层的章节节点及其关系"""
     section_id = section.get("id", "")
     section_title = section.get("title", "")
+    section_level = section.get("level", "")
 
     # 只处理level 1 到 level 3 的节点
-    if section.get("level") not in [1, 2, 3]:
+    if section_level not in [1, 2, 3]:
         return entity_count, relation_count
 
-    # 处理实体和关系
-    if "entities" in section and "relations" in section:
-        # 处理实体
-        for entity in section["entities"]:
-            name = entity.get("name", "").strip()
-            if name:
-                # 为每个实体生成一个唯一的ID
-                if name not in node_id_map:
-                    node_id_map[name] = len(node_id_map) + 1  # 为每个节点分配唯一ID
-                node_id = node_id_map[name]
+    # 处理实体（节点）
+    if section_title:
+        # 为每个节点生成一个唯一ID
+        node_id = len(node_id_map) + 1
+        node_id_map[section_id] = node_id
 
-                nodes.append({
-                    "id": node_id,
-                    "name": name,
-                    "type": entity.get("type", ""),
-                    "description": entity.get("raw_content", entity.get("description", ""))  # 用description或raw_content作为描述
-                })
-                entity_count += 1
+        nodes.append({
+            "id": node_id,
+            "name": section_title,  # 节点的name是title
+            "title": section_title,
+            "type": f"level{section_level}",  # 节点的type是level1, level2, level3
+            "description": section_id  # 节点的描述是id
+        })
+        entity_count += 1
 
-        # 处理关系
-        for relation in section["relations"]:
-            source = relation.get("source", "").strip()
-            target = relation.get("target", "").strip()
-            if source and target:
-                source_id = node_id_map.get(source)
-                target_id = node_id_map.get(target)
-                if source_id and target_id:  # 确保源节点和目标节点的ID存在
-                    edges.append({
-                        "source": source_id,
-                        "target": target_id,
-                        "relationship": relation.get("type", ""),
-                        "description": relation.get("description", "")
-                    })
-                    relation_count += 1
+    # 处理关系（父子关系）
+    if parent_id:
+        edges.append({
+            "source": parent_id,
+            "target": node_id,
+            "relationship": "child_of",  # 表示层级关系
+            "description": f"{parent_id} -> {node_id}"  # 关系描述
+        })
+        relation_count += 1
 
-    # 递归处理子节点
+    # 递归处理子节点（但不处理超过level 3的子节点）
     for child in section.get("children", []):
-        entity_count, relation_count = process_section(child, nodes, edges, entity_count, relation_count, node_id_map, section_id)
+        entity_count, relation_count = process_section(child, nodes, edges, entity_count, relation_count, node_id_map, node_id)
 
     return entity_count, relation_count
 
