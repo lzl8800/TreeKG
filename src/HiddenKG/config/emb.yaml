@@ -1,0 +1,14 @@
+# HiddenKG/config/emb.yaml
+EmbConfig:
+  # —— I/O（仅文件名；实际路径代码里自动拼接到 HiddenKG/output 下）——
+  INPUT_NAME:  "conv_entities.json"      # 上一步 conv 的输出
+  OUTPUT_NAME: "node_embeddings.pkl"     # 本步的输出
+
+  # —— 推理参数 ——
+  BATCH_SIZE: 16
+  MAX_LENGTH: 512
+  USE_AMP: true          # 半精度；若报显卡/驱动不支持可改为 false
+  DEVICE: "cuda"         # 或 "cpu"
+
+  # —— 模型目录（仅目录名；实际路径代码里拼接 HiddenKG/model/<BERT_DIR_NAME>）——
+  BERT_DIR_NAME: "bert-base-chinese"
