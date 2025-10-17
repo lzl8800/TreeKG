@@ -1,0 +1,61 @@
+# config/extraction.yaml
+ExtractionConfig:
+  # —— I/O —— #
+  IN_NAME: "toc_with_summaries.json"
+  OUT_NAME: "toc_with_entities_and_relations.json"
+
+  ENCODING: "utf-8"
+
+  # —— LLM 调用参数 —— #
+  TEMPERATURE: 0.3
+  REQUEST_TIMEOUT: 120
+
+  # —— 并发与稳健性 —— #
+  MAX_WORKERS: 6
+  RETRY_ATTEMPTS: 3
+  RETRY_BACKOFF_BASE: 1.8
+
+  # —— 速率限制（可选）—— #
+  RATE_LIMIT_QPS: 0
+  EXTRA_THROTTLE_SEC: 0.0
+
+  # —— 提示词模板 —— #
+  ENTITY_PROMPT: |
+    Role: 你是课程知识图谱专家，擅长实体提取。
+    Task: 从以下摘要中提取教材课程强相关实体，输出JSON格式。
+    Constraints:
+      1. 实体为名词短语（如“库仑定律”）；
+      2. 同一实体的不同名称合并到“alias”（如“F=ma”→“牛顿第二定律”的alias）；
+      3. 实体类型需具体（如“物理定律”，而非“概念”）。
+    Input Summary: {section_summary}
+    Output Template:
+    {{
+      "entities": [
+        {{
+          "name": "实体名",
+          "alias": ["别名1"],
+          "type": "实体类型",
+          "raw_content": "摘要中描述该实体的原文"
+        }}
+      ]
+    }}
+    Output must be valid JSON only, without explanation.
+
+  RELATION_PROMPT: |
+    Role: 你是课程教学领域专家，擅长判断实体间关系。
+    Task: 基于摘要和实体列表，判断实体间是否存在关系，输出JSON。
+    Input:
+      摘要：{section_summary}
+      实体列表：{entity_list}
+    Output Template:
+    {{
+      "relations": [
+        {{
+          "source": "源实体名",
+          "target": "目标实体名",
+          "type": "关系类型（如“定义”）",
+          "description": "关系说明"
+        }}
+      ]
+    }}
+    Output must be valid JSON only, without explanation.
