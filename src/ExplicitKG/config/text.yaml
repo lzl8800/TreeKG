@@ -1,0 +1,49 @@
+TextSegConfig:
+  # —— I/O —— #
+  DOCX_NAME: "MATLAB完全自学一本通.docx"
+
+  TOC_NAME: "toc_structure.json"
+
+  WARN_NAME: "toc_warnings.log"
+
+  ENCODING: "utf-8"
+
+  # —— 行为策略 ——
+  USE_STYLE_FIRST: true             # 样式优先
+  ENABLE_REGEX_FALLBACK: true       # 样式失效时回退正则
+  MAX_LEVEL: 4                      # 最大层级（1=章,2=节,3=小节,4=知识点）
+  WARNINGS_PRINT_TOP: 10            # 控制台最多打印的告警条数
+  SAVE_WARNINGS_FILE: true          # 是否写入告警文件
+
+  # —— 标题清洗 ——
+  NORMALIZE_SPACES: true
+  REMOVE_TRAILING_PAGE_NO: true
+  STRIP_COLONS: true
+  SPACE_SUBSTITUTIONS:
+    - "\u00A0"
+    - "\u2003"
+    - "\u3000"  # 不同空格类型
+
+  # —— 段落样式映射（大小写不敏感）——
+  HEADING_MAP:
+    "heading 1": 1
+    "heading1": 1
+    "标题 1": 1
+    "标题1": 1
+    "heading 2": 2
+    "heading2": 2
+    "标题 2": 2
+    "标题2": 2
+    "heading 3": 3
+    "heading3": 3
+    "标题 3": 3
+    "标题3": 3
+    "heading 4": 4
+    "heading4": 4
+    "标题 4": 4
+    "标题4": 4
+# —— 正则（仅段首匹配）——
+  CHAPTER_PATTERN: "^\\s*第\\s*([一二三四五六七八九十百零〇0-9]+)\\s*章[：:\\s　]+(.+?)\\s*$"
+  SECTION_PATTERN: "^\\s*((\\d{1,2})\\.(\\d{1,2}))\\s*[：:\\s　]+(.+?)\\s*$"   # 1.1
+  SUBSECTION_PATTERN: "^\\s*((\\d{1,2})\\.(\\d{1,2})\\.(\\d{1,2}))\\s*[：:\\s　]+(.+?)\\s*$"  # 1.1.1
+  POINT_PATTERN: "^\\s*((\\d{1,2})\\.(\\d{1,2})\\.(\\d{1,2})\\.(\\d{1,2}))\\s*[：:\\s　]+(.+?)\\s*$"  # 1.1.1.1
