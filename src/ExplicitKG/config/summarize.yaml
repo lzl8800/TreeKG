@@ -1,0 +1,42 @@
+# config/summarize.yaml
+SummarizeConfig:
+  # —— I/O —— #
+  DOCX_NAME: "MATLAB完全自学一本通.docx"  # 书籍 .docx 文件名
+  TOC_NAME: "toc_structure.json"           # 上一步生成的 toc_structure.json 文件名
+  OUT_NAME: "toc_with_summaries.json"  # 输出 JSON 文件名
+  ENCODING: "utf-8"
+
+  # —— LLM 调用参数 —— #
+  TEMPERATURE: 0.3
+  TARGET_SUMMARY_LEN: 220  # 目标摘要字数
+  REQUEST_TIMEOUT: 120     # 单次请求超时秒
+
+  # —— 文本切块策略 —— #
+  MAX_CHARS: 2000         # 每块最大字符长度
+  CHUNK_OVERLAP: 150      # 块间重叠长度
+
+  # —— 并发控制 —— #
+  MAX_WORKERS: 8          # 并发线程数
+  RETRY_ATTEMPTS: 3       # 重试次数
+  RETRY_BACKOFF_BASE: 1.8 # 指数退避底数（秒）
+
+  # —— 提示词模板 —— #
+  LEAF_PROMPT: |
+    Role: 你是教材内容提炼专家，擅长提炼关键概念与术语。
+    Task: 为以下小节正文生成 {target_len} 字左右的中文摘要，必须忠于原文，不添加外部知识。
+    Constraints:
+    - 语言简洁，保留学术术语
+    - 说明核心概念/关键术语及其关系或作用
+    - 只输出一段通顺的中文，不要列点编号
+    Input Text:
+    {content}
+
+  AGG_PROMPT: |
+    Role: 你是教材内容提炼专家，擅长将多段小节摘要压缩为上级摘要。
+    Task: 基于下列子节点摘要，生成 {target_len} 字左右的中文上级摘要（覆盖要点、突出层次）。
+    Constraints:
+    - 覆盖所有子摘要中的核心概念/术语
+    - 去重与压缩，保持逻辑清晰
+    - 不添加超出原文的信息
+    Child Summaries:
+    {content}
