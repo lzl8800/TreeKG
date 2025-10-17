@@ -1,23 +1,75 @@
-# 继续使用之前的模块
+# -*- coding: utf-8 -*-
+"""
+HiddenKG 第一步：实体聚合（Aggr）
+- 读取 HiddenKG/config/config.yaml，并加载其中 include_files（相对 HiddenKG/config/ 拼接）
+- 只使用 YAML 中的名字字段来拼接路径：
+    CONV_IN_NAME -> HiddenKG/output/CONV_IN_NAME
+    OUT_NAME     -> HiddenKG/output/OUT_NAME
+    LOG_NAME     -> HiddenKG/logs/LOG_NAME
+- APIConfig 也从 YAML 读取（继承 ExplicitKG 的 config.yaml 后生效）
+"""
+
 from __future__ import annotations
 
 import json
-import re
 import time
 import logging
 import requests
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Dict, List, Tuple
-
+from typing import Dict, List, Tuple, Any
+import yaml
 from tqdm import tqdm
+import re
 
-# 统一导入配置命名空间（不使用别名）
-from HiddenKG.config import APIConfig
-from HiddenKG.config.aggr import AggrConfig as Aggr
+# =========================
+# 配置加载（YAML）
+# =========================
+def load_yaml(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
 
-# ========== 日志 ==========
-LOG_PATH = Aggr.LOG_DIR / "aggr.log"
+# HiddenKG 目录
+SCRIPT_DIR = Path(__file__).resolve().parent
+CFG_DIR = SCRIPT_DIR / "config"
+
+# 主配置：HiddenKG/config/config.yaml
+MAIN_CFG_PATH = CFG_DIR / "config.yaml"
+config = load_yaml(MAIN_CFG_PATH)
+
+# 递归加载 include_files（相对路径从 HiddenKG/config/ 拼接；绝对路径原样用）
+includes = config.get("include_files", []) or []
+for inc in includes:
+    inc_path = Path(inc)
+    if not inc_path.is_absolute():
+        inc_path = (CFG_DIR / inc).resolve()
+    if inc_path.exists():
+        cfg_add = load_yaml(inc_path)
+        if cfg_add:
+            config.update(cfg_add)
+
+# 取出 API 与 Aggr 配置（字典）
+APIConfig = config.get("APIConfig", {})
+AggrCfg   = config.get("AggrConfig", {})
+
+
+
+# =========================
+# 路径拼接
+# =========================
+OUTPUT_DIR = SCRIPT_DIR / "output"
+LOGS_DIR   = SCRIPT_DIR / "logs"
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+LOGS_DIR.mkdir(parents=True, exist_ok=True)
+
+# 名字到实际路径
+CONV_IN_PATH = OUTPUT_DIR / AggrCfg.get("CONV_IN_NAME", "conv_entities.json")
+AGGR_OUT_PATH = OUTPUT_DIR / AggrCfg.get("OUT_NAME", "aggr_entities.json")
+LOG_PATH = LOGS_DIR / AggrCfg.get("LOG_NAME", "aggr.log")
+
+# =========================
+# 日志
+# =========================
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -28,10 +80,28 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Aggr")
 
-# 复用长连接，减少握手与队头阻塞
+# =========================
+# 运行参数
+# =========================
+TEMPERATURE = float(AggrCfg.get("TEMPERATURE", 0.0))
+MAX_TOKENS  = int(AggrCfg.get("MAX_TOKENS", 24))
+API_TIMEOUT = int(AggrCfg.get("API_TIMEOUT", 120))
+RETRIES     = int(AggrCfg.get("RETRIES", 3))
+CHAT_COMPLETIONS_PATH = AggrCfg.get("CHAT_COMPLETIONS_PATH", "/chat/completions")
+DRY_RUN     = bool(int(AggrCfg.get("DRY_RUN", 0)))
+
+API_BASE = APIConfig.get("API_BASE", "")
+API_KEY  = APIConfig.get("API_KEY", "")
+MODEL    = APIConfig.get("MODEL_NAME", "")
+
+# 复用长连接
 SESSION = requests.Session()
 
-# ========== 数据结构 ==========
+# =========================
+# 数据结构
+# =========================
+from dataclasses import dataclass
+
 @dataclass
 class Occurrence:
     path: str
@@ -55,7 +125,9 @@ class EntityItem:
     role: str = ""  # "core" / "non-core"
     updated_description: str = ""  # 预留
 
-# ======== 提示词（第一行只输出标签） ========
+# =========================
+# 提示词 & 解析
+# =========================
 def build_system_prompt() -> str:
     return (
         "你是知识图谱构建专家。任务：判断实体是否为核心（core）或非核心（non-core）。\n"
@@ -98,7 +170,6 @@ def build_user_prompt_for_role(entity: EntityItem, section_summary: str) -> str:
         f"章节摘要（可选）：{_truncate(section_summary, 200)}\n"
     )
 
-# ======== LLM 调用与解析 ========
 _RE_CORE = r"(?:\bcore\b|核心)(?!\s*(?:词|概念|内容))"
 _RE_NONCORE = r"(?:\bnon[-\s]?core\b|非核心)"
 ROLE_PATTERN = re.compile(rf"{_RE_NONCORE}|{_RE_CORE}", flags=re.I)
@@ -128,38 +199,39 @@ def _parse_role(text: str) -> str:
     last = matches[-1].group(0).lower().strip()
     return "non-core" if ("non" in last or "非核" in last) else "core"
 
-def call_llm(system_prompt: str, user_prompt: str) -> Tuple[str, bool, str, int, bool]:
-    if Aggr.DRY_RUN:
+def call_llm(system_prompt: str, user_prompt: str):
+    """调用 OpenAI 兼容 /chat/completions；支持无鉴权本地网关"""
+    if DRY_RUN:
         return "", False, "dry_run_enabled", 0, True
-    if not APIConfig.API_BASE:
+    if not API_BASE:
         logger.warning("API_BASE 为空，跳过 LLM 调用。")
         return "", False, "api_base_empty", 0, False
 
     headers = {"Content-Type": "application/json"}
-    if getattr(APIConfig, "API_KEY", None):
-        headers["Authorization"] = f"Bearer {APIConfig.API_KEY}"
+    if API_KEY:
+        headers["Authorization"] = f"Bearer {API_KEY}"
 
     payload = {
-        "model": APIConfig.MODEL_NAME,
+        "model": MODEL,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": Aggr.TEMPERATURE,
-        "max_tokens": Aggr.MAX_TOKENS,
+        "temperature": TEMPERATURE,
+        "max_tokens": MAX_TOKENS,
         "top_p": 1,
         "frequency_penalty": 0,
         "presence_penalty": 0,
     }
 
     last_err = ""
-    for attempt in range(1, Aggr.RETRIES + 1):
+    for attempt in range(1, RETRIES + 1):
         try:
             resp = SESSION.post(
-                f"{APIConfig.API_BASE}{Aggr.CHAT_COMPLETIONS_PATH}",
+                f"{API_BASE}{CHAT_COMPLETIONS_PATH}",
                 headers=headers,
                 json=payload,
-                timeout=Aggr.API_TIMEOUT,
+                timeout=API_TIMEOUT,
             )
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"].strip()
@@ -168,9 +240,9 @@ def call_llm(system_prompt: str, user_prompt: str) -> Tuple[str, bool, str, int,
             last_err = "empty_content"
         except Exception as e:
             last_err = str(e)
-            logger.warning(f"LLM 调用失败(第 {attempt}/{Aggr.RETRIES} 次)：{last_err}")
+            logger.warning(f"LLM 调用失败(第 {attempt}/{RETRIES} 次)：{last_err}")
             time.sleep(2 ** attempt)
-    return "", False, last_err or "unknown_error", Aggr.RETRIES, False
+    return "", False, last_err or "unknown_error", RETRIES, False
 
 def _fallback_role(entity: EntityItem) -> Tuple[str, str]:
     score = len(entity.occurrences) + 0.5 * len(entity.neighbors)
@@ -198,7 +270,9 @@ def judge_role(entity: EntityItem, section_summary: str) -> Tuple[str, dict]:
     }
     return parsed, diag
 
-# ======== 结构调整（横改纵 + 树约束） ========
+# =========================
+# 结构调整（横改纵 + 树约束）
+# =========================
 def _is_vertical(snippet: str) -> bool:
     head = (snippet or "").split("|", 1)[0].strip().lower()
     return head in {"has_subordinate", "has_parent", "has_entity", "has_subsection"}
@@ -244,16 +318,14 @@ def _apply_edge_conversion(entities: Dict[str, EntityItem], chosen: Dict[str, st
         # 删除 core 与 child 的横向边
         old = len(core_ent.neighbors)
         core_ent.neighbors = [
-            Neighbor(n.name, n.snippet)
-            for n in core_ent.neighbors
+            n for n in core_ent.neighbors
             if not (n.name == child_name and _is_horizontal(n.snippet))
         ]
         removed += (old - len(core_ent.neighbors))
 
         old = len(child_ent.neighbors)
         child_ent.neighbors = [
-            Neighbor(n.name, n.snippet)
-            for n in child_ent.neighbors
+            n for n in child_ent.neighbors
             if not (n.name == parent_name and _is_horizontal(n.snippet))
         ]
         removed += (old - len(child_ent.neighbors))
@@ -285,19 +357,18 @@ def _apply_edge_conversion(entities: Dict[str, EntityItem], chosen: Dict[str, st
 
     return added, removed
 
-# ======== 主流程 ========
+# =========================
+# 主流程
+# =========================
 def run_aggr():
-    Aggr.ensure_paths()
-
-    # 读取实体文件（上游 Conv 输出）
-    conv_path = Path(Aggr.FILE_CONV_RESULT)
-    if not conv_path.exists():
+    # 路径检查
+    if not CONV_IN_PATH.exists():
         raise FileNotFoundError(
-            f"未找到 conv 实体文件：{conv_path}\n"
-            f"可通过环境变量 AGGR_CONV_INPUT 覆盖该路径。"
+            f"未找到 conv 实体文件：{CONV_IN_PATH}\n"
+            f"请确认 HiddenKG/output/ 目录或在 aggr.yaml 中设置 CONV_IN_NAME。"
         )
 
-    with conv_path.open("r", encoding="utf-8") as f:
+    with CONV_IN_PATH.open("r", encoding="utf-8") as f:
         raw = json.load(f)
 
     # 转对象
@@ -347,13 +418,15 @@ def run_aggr():
             "neighbors": [asdict(n) for n in ent.neighbors],
         }
 
-    out_path = Path(Aggr.FILE_AGGR_RESULT)
-    with out_path.open("w", encoding="utf-8") as f:
+    AGGR_OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with AGGR_OUT_PATH.open("w", encoding="utf-8") as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
 
-    logger.info(f"[aggr] 完成，共处理 {len(out)} 个实体。输出文件：{out_path}")
+    logger.info(f"[aggr] 完成，共处理 {len(out)} 个实体。输出文件：{AGGR_OUT_PATH}")
     print(f"\n✅ Aggr 阶段完成，日志写入: {LOG_PATH}")
 
-# ======== CLI ========
+# =========================
+# CLI
+# =========================
 if __name__ == "__main__":
     run_aggr()
