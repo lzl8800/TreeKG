@@ -29,6 +29,7 @@ def read_pred_result(infile: str):
 def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
     List[Dict], List[Dict], int, int, int, int]:
     core_nodes = []
+    non_core_nodes = []  # 用于存储非核心节点
     edges = []
     toc_nodes = toc_data.get("nodes", [])
     toc_edges = toc_data.get("edges", [])
@@ -48,7 +49,7 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
     # 计数没有找到连接的核心节点数量
     unconnected_core_count = 0
 
-    # 提取核心节点
+    # 提取核心节点和非核心节点
     for entity_name, entity in entities.items():
         if 'name' not in entity:
             print(f"Warning: Entity {entity_name} is missing 'name' key, skipping.")
@@ -66,6 +67,7 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
             core_nodes.append(node)
             core_count += 1
         else:
+            non_core_nodes.append(node)  # 将非核心节点添加到非核心节点列表
             non_core_count += 1
 
         # 查找每个core节点对应的TOC小节
@@ -79,8 +81,8 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
                 for toc_node in toc_nodes:
                     if toc_node["title"] == occurrence_title:  # 完全匹配
                         edge = {
-                            "source": toc_node["id"],
-                            "target": core_node["id"],
+                            "source": toc_node["title"],  # 使用name而非id
+                            "target": core_node["name"],  # 使用name而非id
                             "relationship": "core-toc",  # core节点与TOC节点之间的关系
                             "relation_type": "所属小节"
                         }
@@ -103,8 +105,8 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
             # 区分核心节点和非核心节点之间的边
             if entity.get("role") == "core" and target in entities:
                 edge = {
-                    "source": node["id"],  # 使用新的 ID
-                    "target": toc_name_to_id.get(target, target),  # 查找 TOC 中父节点的 ID
+                    "source": node["name"],  # 使用name而非id
+                    "target": toc_name_to_id.get(target, target),  # 查找 TOC 中父节点的 name
                     "relationship": "core-core" if entities[target].get("role") == "core" else "core-non-core",
                     "relation_type": snippet.split("|")[0] if "|" in snippet else snippet
                 }
@@ -118,8 +120,8 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
             if core_node["name"] == toc_node["name"]:
                 # 为核心节点和上一层TOC节点之间建立边
                 edge = {
-                    "source": toc_node["id"],
-                    "target": core_node["id"],
+                    "source": toc_node["name"],  # 使用name而非id
+                    "target": core_node["name"],  # 使用name而非id
                     "relationship": "toc-core",
                     "relation_type": "上一级章节"
                 }
@@ -134,7 +136,8 @@ def extract_core_and_edges(entities: Dict[str, Dict], toc_data: Dict) -> Tuple[
         toc_node["id"] = node_id_counter
         node_id_counter += 1
 
-    return toc_nodes + core_nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count
+    # 返回核心节点和非核心节点，避免重复添加TOC节点
+    return core_nodes + non_core_nodes, edges, toc_node_count, toc_edge_count, core_count, non_core_count
 
 
 # 将数据转换为标准的知识图谱格式并保存
@@ -147,16 +150,37 @@ def convert_to_kg_format(entities: Dict[str, Dict], toc_data: Dict, pred_edges: 
     toc_nodes = toc_data.get("nodes", [])
     toc_edges = toc_data.get("edges", [])
 
-    # 确保TOC节点和边被完整合并
-    nodes.extend(toc_nodes)
-    edges.extend(toc_edges)
-
     # 合并 pred_result 中的边数据
-    edges.extend(pred_edges)
+    for pred_edge in pred_edges:
+        u = pred_edge.get("u")
+        v = pred_edge.get("v")
+        relationship = pred_edge.get("llm", {}).get("type", "")
+        description = pred_edge.get("llm", {}).get("description", "")
+
+        if u and v:
+            # 检查 u 和 v 是否在现有的节点列表中
+            node_names = [node['name'] for node in nodes]  # 获取所有节点的name
+
+            if u not in node_names:
+                print(f"节点 '{u}' 不在现有节点列表中，跳过边的添加")
+                continue  # 如果 u 不在节点列表中，跳过这条边
+
+            if v not in node_names:
+                print(f"节点 '{v}' 不在现有节点列表中，跳过边的添加")
+                continue  # 如果 v 不在节点列表中，跳过这条边
+
+            # 如果 u 和 v 都在节点列表中，添加边
+            edge = {
+                "source": u,  # 使用name作为source
+                "target": v,  # 使用name作为target
+                "relationship": relationship,  # 关系类型
+                "relation_type": description  # 关系描述
+            }
+            edges.append(edge)
 
     # 构建知识图谱格式的 JSON
     kg = {
-        "nodes": nodes,
+        "nodes": nodes + toc_nodes,  # 只在这里加TOC节点，避免重复
         "edges": edges
     }
 
@@ -170,7 +194,8 @@ def convert_to_kg_format(entities: Dict[str, Dict], toc_data: Dict, pred_edges: 
     print(f"TOC 层边数量：{toc_edge_count}")
     print(f"核心节点数量：{core_count}")
     print(f"非核心节点数量：{non_core_count}")
-    print(f"总边数量：{len(edges)}")
+    print(f"总节点数量：{len(nodes) + len(toc_nodes)}")  # 打印总节点数量
+    print(f"总边数量：{len(edges)}")  # 打印总边数量
 
 
 # 主流程
