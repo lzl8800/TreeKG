@@ -19,16 +19,50 @@ import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
+import yaml
 from docx import Document
 from tqdm import tqdm
 import openai
 
-# ===== 配置 =====
-try:
-    from config import APIConfig, SummarizeConfig
-except Exception as e:
-    raise RuntimeError(f"无法导入配置：{e}")
+# ===== 配置加载（相对 config.yaml 解析 include） =====
+def _load_yaml(p: Path) -> dict:
+    with p.open("r", encoding="utf-8") as f:
+        return yaml.safe_load(f) or {}
+
+def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
+    merged: Dict[str, Any] = {}
+    for rel in include_files or []:
+        rel_str = str(rel)
+        inc_path = Path(rel_str)
+        if not inc_path.is_absolute():
+            inc_path = (base_dir / rel_str).resolve()
+        # 若写成了 "config/xxx.yaml"，容错去掉前缀再找
+        if not inc_path.exists() and rel_str.startswith("config/"):
+            inc_path = (base_dir / rel_str.split("/", 1)[1]).resolve()
+        if not inc_path.exists():
+            raise FileNotFoundError(f"找不到包含文件：{inc_path}")
+        merged.update(_load_yaml(inc_path))
+    return merged
+
+# 脚本所在目录：src/ExplicitKG
+script_dir = Path(__file__).resolve().parent
+
+# 主配置：src/ExplicitKG/config/config.yaml
+config_file = script_dir / "config" / "config.yaml"
+config_dir = config_file.parent  # = src/ExplicitKG/config
+
+# 读取主配置并合并 include
+config = _load_yaml(config_file)
+additional = _load_additional_configs(config.get("include_files", []), base_dir=config_dir)
+config.update(additional)
+
+# 提取子配置
+SummarizeConfig: Dict[str, Any] = config["SummarizeConfig"]
+APIConfig: Dict[str, Any] = config["APIConfig"]
+
+# ===== OpenAI 兼容接口 =====
+openai.api_base = APIConfig.get("API_BASE", "")
+openai.api_key = APIConfig.get("API_KEY", "")
 
 # ===== 日志 =====
 logger = logging.getLogger("Summarize")
@@ -37,9 +71,18 @@ _handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
 logger.addHandler(_handler)
 logger.setLevel(logging.INFO)
 
+
 # ===== OpenAI 兼容接口 =====
-openai.api_base = APIConfig.API_BASE
-openai.api_key = APIConfig.API_KEY
+openai.api_base = APIConfig["API_BASE"]
+openai.api_key = APIConfig["API_KEY"]
+
+# 获取配置文件路径，自动拼接路径
+output_dir = script_dir / "output"
+
+# 获取 .docx 和 toc 文件路径
+docx_path = output_dir / SummarizeConfig['DOCX_NAME']
+toc_json_path = output_dir / SummarizeConfig['TOC_NAME']
+out_json_path = output_dir / SummarizeConfig['OUT_NAME']
 
 # ===== 工具函数 =====
 def normalize_text(s: str) -> str:
@@ -135,39 +178,39 @@ def split_chunks(text: str, max_len: int, overlap: int) -> List[str]:
 # ===== LLM 请求（重试+退避）=====
 def _chat_once(prompt: str) -> str:
     resp = openai.ChatCompletion.create(
-        model=APIConfig.MODEL_NAME,
+        model=APIConfig["MODEL_NAME"],
         messages=[{"role": "user", "content": prompt}],
-        temperature=SummarizeConfig.TEMPERATURE,
-        timeout=SummarizeConfig.REQUEST_TIMEOUT,
+        temperature=SummarizeConfig["TEMPERATURE"],
+        timeout=SummarizeConfig["REQUEST_TIMEOUT"],
     )
     return resp["choices"][0]["message"]["content"].strip()
 
 def chat_with_retry(prompt: str) -> str:
     last_err = None
-    for k in range(SummarizeConfig.RETRY_ATTEMPTS):
+    for k in range(SummarizeConfig["RETRY_ATTEMPTS"]):
         try:
             return _chat_once(prompt)
         except Exception as e:
             last_err = e
-            backoff = (SummarizeConfig.RETRY_BACKOFF_BASE ** k)
+            backoff = (SummarizeConfig["RETRY_BACKOFF_BASE"] ** k)
             time.sleep(backoff)
-    raise RuntimeError(f"LLM 请求失败（已重试 {SummarizeConfig.RETRY_ATTEMPTS} 次）: {last_err}")
+    raise RuntimeError(f"LLM 请求失败（已重试 {SummarizeConfig['RETRY_ATTEMPTS']} 次）: {last_err}")
 
 def summarize_leaf_text(raw_text: str) -> str:
     if not raw_text.strip():
         return ""
-    parts = split_chunks(raw_text, SummarizeConfig.MAX_CHARS, SummarizeConfig.CHUNK_OVERLAP)
+    parts = split_chunks(raw_text, SummarizeConfig["MAX_CHARS"], SummarizeConfig["CHUNK_OVERLAP"])
     summaries: List[str] = []
     for ck in parts:
-        prompt = SummarizeConfig.LEAF_PROMPT.format(
-            target_len=SummarizeConfig.TARGET_SUMMARY_LEN, content=ck
+        prompt = SummarizeConfig["LEAF_PROMPT"].format(
+            target_len=SummarizeConfig["TARGET_SUMMARY_LEN"], content=ck
         )
         summaries.append(chat_with_retry(prompt))
     if len(summaries) == 1:
         return summaries[0]
     merged = "\n\n".join(summaries)
-    prompt = SummarizeConfig.AGG_PROMPT.format(
-        target_len=SummarizeConfig.TARGET_SUMMARY_LEN, content=merged
+    prompt = SummarizeConfig["AGG_PROMPT"].format(
+        target_len=SummarizeConfig["TARGET_SUMMARY_LEN"], content=merged
     )
     return chat_with_retry(prompt)
 
@@ -180,8 +223,8 @@ def aggregate_children(children: List[Dict[str, Any]]) -> str:
     if not pieces:
         return ""
     content = "\n\n".join(pieces)
-    prompt = SummarizeConfig.AGG_PROMPT.format(
-        target_len=SummarizeConfig.TARGET_SUMMARY_LEN, content=content
+    prompt = SummarizeConfig["AGG_PROMPT"].format(
+        target_len=SummarizeConfig["TARGET_SUMMARY_LEN"], content=content
     )
     return chat_with_retry(prompt)
 
@@ -213,16 +256,16 @@ def nodes_at_depth(toc: List[Dict[str, Any]], d: int) -> List[Dict[str, Any]]:
         dfs(r)
     return out
 
-def run(docx: Path, toc_json: Path, out_json: Path) -> None:
-    if not docx.exists():
-        raise FileNotFoundError(f"未找到 .docx：{docx}")
-    if not toc_json.exists():
-        raise FileNotFoundError(f"未找到 TOC：{toc_json}，请先运行 TextSegmentation.py")
+def run() -> None:
+    if not docx_path.exists():
+        raise FileNotFoundError(f"未找到 .docx：{docx_path}")
+    if not toc_json_path.exists():
+        raise FileNotFoundError(f"未找到 TOC：{toc_json_path}，请先运行 TextSegmentation.py")
 
-    with toc_json.open("r", encoding=SummarizeConfig.ENCODING) as f:
+    with toc_json_path.open("r", encoding=SummarizeConfig["ENCODING"]) as f:
         toc: List[Dict[str, Any]] = json.load(f)
 
-    paras = load_docx_paragraphs(docx)
+    paras = load_docx_paragraphs(docx_path)
     attach_para_ranges(toc, paras)
 
     # 打深度标签
@@ -242,7 +285,7 @@ def run(docx: Path, toc_json: Path, out_json: Path) -> None:
         pbar.update(1)
 
     # 自底向上：从最大深度到 1，每层并发执行
-    with ThreadPoolExecutor(max_workers=SummarizeConfig.MAX_WORKERS) as pool:
+    with ThreadPoolExecutor(max_workers=SummarizeConfig["MAX_WORKERS"]) as pool:
         for d in range(max_d, 0, -1):
             layer_nodes = nodes_at_depth(toc, d)
             # 提交本层所有节点任务
@@ -253,26 +296,20 @@ def run(docx: Path, toc_json: Path, out_json: Path) -> None:
 
     pbar.close()
 
-    out_json.parent.mkdir(parents=True, exist_ok=True)
-    with out_json.open("w", encoding=SummarizeConfig.ENCODING) as f:
+    out_json_path.parent.mkdir(parents=True, exist_ok=True)
+    with out_json_path.open("w", encoding=SummarizeConfig["ENCODING"]) as f:
         json.dump(toc, f, ensure_ascii=False, indent=2)
 
-    logger.info(f"✅ 已写出：{out_json.resolve()}")
+    logger.info(f"✅ 已写出：{out_json_path.resolve()}")
     logger.info("每个节点包含：id/title/children/para_start/para_end/summary")
 
 def main():
     ap = argparse.ArgumentParser(description="自底向上并发摘要（.docx 源）")
-    ap.add_argument("--docx", type=str, default=str(SummarizeConfig.DOCX_PATH),
-                    help="输入 .docx 路径")
-    ap.add_argument("--toc", type=str, default=str(SummarizeConfig.TOC_JSON_PATH),
-                    help="TOC JSON 路径")
-    ap.add_argument("--out", type=str, default=str(SummarizeConfig.OUT_JSON_PATH),
-                    help="输出 JSON 路径")
     ap.add_argument("--loglevel", type=str, default="INFO",
                     choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     args = ap.parse_args()
     logger.setLevel(getattr(logging, args.loglevel))
-    run(Path(args.docx), Path(args.toc), Path(args.out))
+    run()
 
 if __name__ == "__main__":
     main()
