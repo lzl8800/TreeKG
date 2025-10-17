@@ -1,0 +1,16 @@
+# config/config.yaml
+PROJECT_ROOT: "/path/to/project"
+SRC_DIR: "/path/to/src"
+EXPLICIT_KG_DIR: "/path/to/explicitkg"
+OUTPUT_DIR: "/path/to/output"
+
+APIConfig:
+  API_BASE: "http://192.168.71.130:9996/v1"
+  API_KEY: ""
+  MODEL_NAME: "gemma-3-it"
+  TIMEOUT_SECS: 120
+
+include_files:
+  - "extraction.yaml"
+  - "text.yaml"
+  - "summarize.yaml"
