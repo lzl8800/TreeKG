@@ -1,0 +1,46 @@
+AggrConfig:
+  # —— I/O（名字即可；实际路径由代码拼：HiddenKG/output 或 HiddenKG/logs）—— #
+  CONV_IN_NAME: "conv_entities.json"
+  OUT_NAME: "aggr_entities.json"
+  LOG_NAME: "aggr.log"
+  ENCODING: "utf-8"
+
+  # —— LLM 调用 —— #
+  TEMPERATURE: 0.0
+  MAX_TOKENS: 24
+  API_TIMEOUT: 120
+  RETRIES: 3
+  CHAT_COMPLETIONS_PATH: "/chat/completions"
+  DRY_RUN: 0
+
+  # —— 调试/运行控制 —— #
+  LIMIT: 0            # 0 表示不限制；>0 仅处理前 N 个实体
+  TREE_ENFORCE: 1     # 是否强制每个 non-core 只有一个父节点
+  PROGRESS_NCOLS: 100 # 进度条宽度
+
+  # —— 关系判定与横改纵 —— #
+  VERTICAL_REL_TYPES:     # 视为“纵向”的关系前缀（不区分大小写）
+    - "has_subordinate"
+    - "has_parent"
+    - "has_entity"
+    - "has_subsection"
+  RELATION_TAGS:          # 横改纵时写回去的关系名
+    child_of: "has_parent|in"        # non-core -> core（回指）
+    parent_of: "has_subordinate|out" # core -> non-core
+
+  # —— 兜底启发式（LLM 失败时）—— #
+  FALLBACK:
+    threshold: 4          # >= threshold 视为 core
+    neighbor_weight: 0.5  # 评分 = 出现次数 + neighbor_weight * 邻居数
+
+  # —— 提示词（可按需修改语气/规则）—— #
+  PROMPTS:
+    system: |
+      你是知识图谱构建专家。任务：判断实体是否为核心（core）或非核心（non-core）。
+      规则：
+      - core 实体通常是该领域的核心概念或重要术语（如主要学科概念、关键技术）。
+      - non-core 实体通常是附属、具体或次要术语（如具体应用、辅助工具）。
+      请严格按以下格式作答：
+      第一行：只输出 core 或 non-core（不加标点、不加解释）
+      第二行起：若需要再给出简要说明。
+      若不确定，倾向输出 non-core。
