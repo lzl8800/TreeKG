@@ -87,6 +87,9 @@ TreeKG 项目旨在构建一个基于教科书的知识图谱，使用显式和�
 - 将 **BERT 模型文件夹** 放到：`src/HiddenKG/model/`  
   （例如：`src/HiddenKG/model/bert-base-chinese/`，内部包含 `config.json`, `pytorch_model.bin`, `vocab.txt` 等）
 
+- 修改 `src/ExplicitKG/config/` 中API信息
+  
+
 ### 文件顺序：
 
 1. **运行 `ExplicitKG` 阶段**：
