@@ -104,7 +104,11 @@ def _chat_once(prompt: str) -> str:
         temperature=config['ExtractionConfig']['TEMPERATURE'],
         timeout=config['ExtractionConfig']['REQUEST_TIMEOUT'],
     )
-    return resp["choices"][0]["message"]["content"].strip()
+    text = resp["choices"][0]["message"]["content"].strip()
+
+    # ✅ 去除 <think> ... </think> 的部分
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    return text.strip()
 
 def chat_with_retry(prompt: str) -> str:
     last_err: Optional[Exception] = None
@@ -158,7 +162,12 @@ def extract_relations(section_summary: str, entities: List[Dict]) -> List[Dict]:
         entity_list=entity_list
     )
     data = call_openai_json(prompt)
-    rels = data.get("relations", [])
+    if isinstance(data, list):
+        rels = data
+    elif isinstance(data, dict):
+        rels = data.get("relations", [])
+    else:
+        rels = []
     cleaned = []
     for r in rels if isinstance(rels, list) else []:
         src = (r.get("source") or "").strip()
@@ -172,6 +181,7 @@ def extract_relations(section_summary: str, entities: List[Dict]) -> List[Dict]:
             "description": (r.get("description") or "").strip(),
         })
     return cleaned
+
 
 def process_one_subsection(summary: str) -> Dict:
     ents = extract_entities(summary)
