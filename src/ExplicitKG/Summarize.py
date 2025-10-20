@@ -183,7 +183,11 @@ def _chat_once(prompt: str) -> str:
         temperature=SummarizeConfig["TEMPERATURE"],
         timeout=SummarizeConfig["REQUEST_TIMEOUT"],
     )
-    return resp["choices"][0]["message"]["content"].strip()
+    text = resp["choices"][0]["message"]["content"].strip()
+    # 去除 <think>...</think> 区块
+    text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    return text.strip()
+
 
 def chat_with_retry(prompt: str) -> str:
     last_err = None
