@@ -105,7 +105,6 @@ def _chat_once(prompt: str) -> str:
         timeout=config['ExtractionConfig']['REQUEST_TIMEOUT'],
     )
     text = resp["choices"][0]["message"]["content"].strip()
-
     # ✅ 去除 <think> ... </think> 的部分
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
     return text.strip()
@@ -191,13 +190,25 @@ def process_one_subsection(summary: str) -> Dict:
     return {"entities": ents, "relations": rels}
 
 def collect_subsections(toc: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
-    """收集 level=3 小节（section 的 children），并且含有 summary。"""
+    """适配 2-4 层目录，自动识别最底层含摘要的节点。"""
     subs: List[Dict[str, Any]] = []
-    for ch in toc:
-        for sec in ch.get("children", []) or []:
-            for sub in sec.get("children", []) or []:
-                if sub.get("summary"):
-                    subs.append(sub)
+    for level1 in toc:  # 第1层（如“第2章 MATLAB基础知识”）
+        # 遍历第2层（level1的子节点，如“2.1 数据类型”）
+        for level2 in level1.get("children", []) or []:
+            # 检查第2层是否有子节点（判断是否为2层目录）
+            if not level2.get("children"):  # 无子节点 → 2层目录，直接收集level2
+                if level2.get("summary"):
+                    subs.append(level2)
+            else:  # 有子节点 → 至少3层目录，继续遍历第3层
+                for level3 in level2.get("children", []) or []:
+                    # 检查第3层是否有子节点（判断是否为3层/4层目录）
+                    if not level3.get("children"):  # 无子节点 → 3层目录，收集level3
+                        if level3.get("summary"):
+                            subs.append(level3)
+                    else:  # 有子节点 → 4层目录，遍历并收集第4层
+                        for level4 in level3.get("children", []) or []:
+                            if level4.get("summary"):
+                                subs.append(level4)
     return subs
 
 # ===== 主流程（并发）=====
