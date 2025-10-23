@@ -29,6 +29,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Dict, List, Tuple, Any, DefaultDict, Optional
 from collections import defaultdict
+from itertools import combinations
 import yaml
 from tqdm import tqdm
 import sys
@@ -138,45 +139,132 @@ def _iter_toc_nodes(toc: List[Dict[str, Any]], parent_path=""):
         for child in node.get("children", []) or []:
             yield from _iter_toc_nodes([child], path)
 
+
 def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
     """
-    仅从 TOC 读取实体与“同小节共现邻居”。
+    从 TOC 载入实体，并根据“同小节共现”统计全局权重，按权重排序写入 neighbors。
+    snippet 统一格式：cooccur|undirected|w=<count>|sec=<node_id>|title=<section_title>|raw=<trimmed_raw>
+    （不新增 dataclass 字段，完全兼容后续 aggr）
     """
     with file_path.open("r", encoding="utf-8") as f:
         toc = json.load(f)
 
     entities: Dict[str, EntityItem] = {}
-    leaf_entities: Dict[str, List[Tuple[str, str]]] = {}
+    # 每个叶小节：[(name, raw_content, section_title, section_id)]
+    leaf_bucket: Dict[str, List[Tuple[str, str, str, str]]] = {}
 
+    # 1) 收集所有叶小节里的实体
     for node, path, node_id, level in _iter_toc_nodes(toc):
         ents = node.get("entities") or []
         if not ents:
             continue
+        sec_title = node.get("title", "")
+        sec_id = node.get("id", "")
+        triples: List[Tuple[str, str, str, str]] = []
         for e in ents:
             name = (e.get("name") or "").strip()
             if not name:
                 continue
-            original = (e.get("raw_content") or "").strip()
+            raw = (e.get("raw_content") or "").strip()
             alias = e.get("alias") or []
             etype = e.get("type") or ""
+            # 建实体
             if name not in entities:
-                entities[name] = EntityItem(name, alias, etype, original, [], [])
-            entities[name].occurrences.append(Occurrence(path, node_id, level, node.get("title", "")))
-            leaf_entities.setdefault(node_id, []).append((name, original))
+                entities[name] = EntityItem(name, alias, etype, raw, [], [])
+            # 记录出现位置
+            entities[name].occurrences.append(Occurrence(path, node_id, level, sec_title))
+            # 放进该叶小节的实体列表
+            triples.append((name, raw, sec_title, sec_id))
+        if triples:
+            leaf_bucket.setdefault(node_id, []).extend(triples)
 
-    # 邻居：同小节共现
-    for node_id, name_list in leaf_entities.items():
-        for name, _ in name_list:
-            neighbor_map = {n.name: n for n in entities[name].neighbors}
-            for n_name, n_snip in name_list:
-                if n_name == name:
+    # 2) 统计“全局共现次数”（跨小节累积）
+    cooccur = defaultdict(int)  # key=(a,b) a<b
+    # 也记录：为某个 name->other 的最佳“示例小节”（方便写到 snippet 里）
+    best_example: Dict[Tuple[str, str], Tuple[int, str, str, str]] = {}
+    #    key=(name, other) → (w, sec_id, sec_title, raw_other)
+
+    for sec_id, triples in leaf_bucket.items():
+        # 去重同一小节里的同名
+        uniq_names = {}
+        for n, raw, s_title, s_id in triples:
+            uniq_names[n] = (raw, s_title, s_id)
+        names = sorted(uniq_names.keys())
+        for a, b in combinations(names, 2):
+            key = (a, b) if a < b else (b, a)
+            cooccur[key] += 1
+
+        # 记录这个小节作为 name-other 的候选“最佳示例”
+        for a in names:
+            for b in names:
+                if a == b:
                     continue
-                neighbor_map.setdefault(n_name, Neighbor(n_name, (n_snip or "")[:100]))
-            # 限额
-            entities[name].neighbors = list(neighbor_map.values())[:MAX_NEIGHBORS_GLOBAL]
+                raw_b, s_title, s_id = uniq_names[b]
+                k = (a, b)
+                w = cooccur[(a, b) if a < b else (b, a)]
+                old = best_example.get(k)
+                if (old is None) or (w > old[0]):  # 用更大权重的小节做示例
+                    best_example[k] = (w, s_id, s_title, raw_b)
+
+    # 3) 为每个实体构建邻居，按权重排序，再截断
+    def _safe(s: str) -> str:
+        # 避免 '|' 破坏 snippet 结构
+        return (s or "").replace("|", " ").replace("\n", " ").strip()
+
+    for name, ent in entities.items():
+        # 收集所有与 name 共现过的 other
+        nb_map: Dict[str, Neighbor] = {}
+        # 找出所有二元组中涉及 name 的 other
+        touched = set()
+        for (a, b), w in cooccur.items():
+            if a == name:
+                touched.add(b)
+            elif b == name:
+                touched.add(a)
+
+        # 写入 neighbor，带上 cooccur 权重&示例小节
+        tmp_list = []
+        for other in touched:
+            key = (name, other)
+            # 权重来自对称 key
+            w = cooccur[(name, other) if name < other else (other, name)]
+            # 取这个方向上记录的“最佳示例小节”
+            w2, sec_id, sec_title, raw_other = best_example.get(key, (w, "", "", ""))
+            w = max(w, w2)
+
+            snippet = f"cooccur|undirected|w={w}|sec={_safe(sec_id)}|title={_safe(sec_title)}|raw={_safe(raw_other)[:80]}"
+            tmp_list.append((w, other, snippet))
+
+        # 排序（权重大优先，其次按名称）
+        tmp_list.sort(key=lambda t: (-t[0], t[1]))
+        # 截断（建议把 MAX_NEIGHBORS_GLOBAL 调大一些，例如 200）
+        keep = tmp_list[:MAX_NEIGHBORS_GLOBAL] if MAX_NEIGHBORS_GLOBAL > 0 else tmp_list
+
+        # 赋值
+        ent.neighbors = [Neighbor(name=o, snippet=snip) for _, o, snip in keep]
+
+    # 4) 对称补齐（如果 A 有 B，但 B 没有 A，则补上）
+    for a, ent in entities.items():
+        has = {n.name for n in ent.neighbors}
+        for b in list(has):
+            if a not in {n.name for n in entities[b].neighbors}:
+                # 估算对应 cooccur 权重和示例（反向）
+                w, sec_id, sec_title, raw_a = best_example.get((b, a), (1, "", "", ""))
+                w = max(w, cooccur[(a, b) if a < b else (b, a)])
+                snip = f"cooccur|undirected|w={w}|sec={_safe(sec_id)}|title={_safe(sec_title)}|raw={_safe(raw_a)[:80]}"
+                entities[b].neighbors.append(Neighbor(name=a, snippet=snip))
+
+        # 如需也对补齐的邻居再截断，可在这里再次按 w 排序（通过解析 snippet 中 w=...）
+        if MAX_NEIGHBORS_GLOBAL > 0 and len(entities[a].neighbors) > MAX_NEIGHBORS_GLOBAL:
+            def _w(n: Neighbor) -> int:
+                m = re.search(r"w=(\d+)", n.snippet)
+                return -(int(m.group(1)) if m else 1)
+            entities[a].neighbors.sort(key=lambda n: (_w(n), n.name))
+            entities[a].neighbors = entities[a].neighbors[:MAX_NEIGHBORS_GLOBAL]
 
     logger.info(f"[TOC] 加载实体 {len(entities)} 个；来自文件：{file_path}")
     return entities
+
 
 # ========== Prompt ==========
 def build_system_prompt() -> str:
@@ -197,6 +285,7 @@ def build_user_prompt(entity: EntityItem) -> str:
         f"出现位置：{occ_str or '（无）'}\n"
         f"邻域实体：\n" + "\n".join(neighbor_lines) + "\n"
         "任务：基于上下文生成增强描述，聚焦其定义、作用及与邻域的关系。\n"
+        "输出要求：仅返回JSON，不添加任何多余文字（如解释、说明、换行）！\n"
         "请返回JSON：{\"name\": \"实体名\", \"updated_description\": \"增强后的描述\"}"
     )
 
@@ -256,7 +345,10 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
                 timeout=API_TIMEOUT
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            text = resp.json()["choices"][0]["message"]["content"].strip()
+            text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+            text = text.strip()
+            return text
         except Exception as e:
             last_err = e
             logger.warning(f"LLM 调用失败({k+1}/{RETRIES})：{e}")
