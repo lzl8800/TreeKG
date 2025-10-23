@@ -1,4 +1,3 @@
-# HiddenKG/config/conv.yaml
 ConvConfig:
   # —— I/O（只保留文件名；路径由代码拼接）——
   TOC_ENT_REL_NAME: "toc_with_entities_and_relations.json"  # 来自 ExplicitKG/output
@@ -8,11 +7,11 @@ ConvConfig:
   CONV_PROMPTS_NAME: "conv_prompts.json"
 
   # —— 邻域控制 ——
-  MAX_NEIGHBORS_GLOBAL: 30
+  MAX_NEIGHBORS_GLOBAL: 300
 
   # —— LLM / 超时 / 重试（默认值；可被环境变量覆盖）——
   TEMPERATURE: 0.2
-  MAX_TOKENS: 300
+  MAX_TOKENS: 1000
   API_TIMEOUT: 120
   RETRIES: 3
   CHAT_COMPLETIONS_PATH: "/chat/completions"
@@ -24,3 +23,25 @@ ConvConfig:
 
   # —— 其他开关 ——
   DRY_RUN: false
+
+  # —— Prompt 模板（从这里读取，不再硬编码在代码里）——
+  PROMPT_SYSTEM: |
+    你是“MATLAB科学计算课程知识图谱专家”。请基于给定的上下文与邻域实体，
+    增强目标实体的描述，保持术语准确、表达清晰，中文输出，长度控制在 200–300 字。
+
+  PROMPT_USER_TEMPLATE: |
+    目标实体：{entity_name}
+    原始描述：{original_desc}
+
+    出现位置（最多3处）：{occurrences}
+
+    邻域实体（按共现权重排序，可能截断）：
+    {neighbors}
+
+    任务：基于以上上下文，为“{entity_name}”给出更清晰、准确、可复用的增强描述，突出其定义、作用、与邻域实体的联系。
+    输出要求：仅返回 JSON，不添加任何多余文字（如解释、说明、换行等）。
+    严格输出：
+    {{
+      "name": "{entity_name}",
+      "updated_description": "200~300字的中文增强描述"
+    }}
