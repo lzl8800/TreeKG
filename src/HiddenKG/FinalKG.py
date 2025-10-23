@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-汇总 HiddenKG/ExplicitKG 结果为最终 KG(JSON)
+ 汇总 HiddenKG/ExplicitKG 结果为最终 KG(JSON)
 - 仅保留：TOC自身边、TOC→core边、core→non-core边、pred预测边
 """
 
@@ -73,8 +73,7 @@ def read_json(infile: Path) -> dict:
 def read_pred_edges(infile: Path) -> List[dict]:
     with infile.open("r", encoding="utf-8") as f:
         data = json.load(f)
-    # 适配pred_result.json的实际结构（边在"predicted_edges"字段）
-    return data.get("predicted_edges", [])
+    return data
 
 # =============== TOC工具函数 ===============
 def _toc_node_name(n: dict) -> str:
@@ -87,6 +86,19 @@ def _build_toc_title_index(toc_nodes: List[dict]) -> Dict[str, dict]:
         if key:
             idx[key] = n
     return idx
+
+def _edge_end_name_from_any(x: Any) -> str:
+    """
+    兼容两种 TOC 边端点：
+    1) 字符串：直接是节点名
+    2) 字典：包含 name/title 的节点对象
+    其它类型：返回空串
+    """
+    if isinstance(x, str):
+        return x.strip()
+    if isinstance(x, dict):
+        return (x.get("name") or x.get("title") or "").strip()
+    return ""
 
 # =============== 核心逻辑：提取节点和边 ===============
 def extract_core_noncore_and_edges(
@@ -103,13 +115,17 @@ def extract_core_noncore_and_edges(
     noncore_nodes: List[dict] = []
     edges: List[dict] = []
 
-    # 1. 先添加TOC自身的边（如"第1章→1.1节"）
+    # 1) 添加 TOC 自身的边（如"第1章→1.1节"），兼容两种格式
     edge_set = set()
+    added_toc_edges = 0
     for e in toc_edges:
-        src = _toc_node_name(e.get("source_node", {}))  # TOC边的源节点名
-        tgt = _toc_node_name(e.get("target_node", {}))  # TOC边的目标节点名
+        # 优先读取 "source"/"target"（字符串），否则回退到 "source_node"/"target_node"（字典）
+        src = _edge_end_name_from_any(e.get("source")) or _edge_end_name_from_any(e.get("source_node"))
+        tgt = _edge_end_name_from_any(e.get("target")) or _edge_end_name_from_any(e.get("target_node"))
+
         rel = "toc→toc"  # 明确标识TOC内部边
-        rtype = e.get("relation_type", "章节层级")
+        rtype = (e.get("relation_type") or "章节层级").strip()
+
         if src and tgt and src != tgt:
             key = (src, tgt, rel, rtype)
             if key not in edge_set:
@@ -120,6 +136,9 @@ def extract_core_noncore_and_edges(
                     "relation_type": rtype
                 })
                 edge_set.add(key)
+                added_toc_edges += 1
+
+    logger.info(f"[Assemble] TOC 自身边加入：{added_toc_edges} 条（原始 {len(toc_edges)} 条）")
 
     # 实体角色映射
     name2role = {k: (v.get("role") or "") for k, v in entities.items()}
@@ -142,7 +161,7 @@ def extract_core_noncore_and_edges(
     # 节点去重集合
     node_seen = set()
 
-    # 2. 处理实体节点及关联边
+    # 2) 处理实体节点及关联边
     for name, ent in entities.items():
         role = ent.get("role") or ""
         node = {
@@ -158,7 +177,7 @@ def extract_core_noncore_and_edges(
         else:
             noncore_nodes.append(node)
 
-        # 3. 只保留TOC→core边（非core实体不关联TOC）
+        # 3) 只保留 TOC→core 边（非 core 实体不关联 TOC）
         if role == "core":
             for occ in (ent.get("occurrences") or []):
                 occ_title = (occ.get("title") or "").strip()
@@ -170,13 +189,13 @@ def extract_core_noncore_and_edges(
                     if toc_name:
                         add_edge(toc_name, name, "toc→core", "章节包含核心实体")
 
-        # 4. 只保留core→non-core边（过滤其他实体间边）
+        # 4) 只保留 core→non-core 边（过滤其他实体间边）
         for nb in (ent.get("neighbors") or []):
             tgt = (nb.get("name") or "").strip()
             snippet = (nb.get("snippet") or "").strip()
             if not tgt or tgt not in entities:
                 continue
-            # 仅保留core→non-core的层级边（根据角色和snippet判断）
+            # 仅保留 core→non-core 的层级边（根据角色和 snippet 判断）
             src_role = name2role.get(name, "")
             tgt_role = name2role.get(tgt, "")
             if src_role == "core" and tgt_role == "non-core" and "has_subordinate" in snippet:
@@ -200,7 +219,7 @@ def convert_to_final_kg(
         entities, toc, logger
     )
 
-    # 合并TOC节点（避免重复）
+    # 合并 TOC 节点（避免重复）
     existing_names = {n["name"] for n in nodes}
     final_toc_nodes: List[dict] = []
     for n in (toc.get("nodes") or []):
@@ -208,14 +227,21 @@ def convert_to_final_kg(
         if nm and nm not in existing_names:
             final_toc_nodes.append({"name": nm, "type": "toc", "description": n.get("title") or nm})
 
-    # 5. 合并pred预测边（仅保留两端节点存在的边）
+    # 5) 合并 pred 预测边（仅保留两端节点存在的边，携带 llm 信息）
     node_name_set = {n["name"] for n in nodes} | {n["name"] for n in final_toc_nodes}
     edge_set = {(e["source"], e["target"], e["relationship"], e["relation_type"]) for e in edges}
 
-    def add_pred_edge(src: str, tgt: str, relationship: str, relation_type: str):
-        key = (src, tgt, relationship, relation_type)
+    def add_pred_edge(src: str, tgt: str, relationship: str, relation_type: str, description: str):
+        # 用包含 description 的 key 去重，避免相同类型不同描述被错误合并
+        key = (src, tgt, relationship, relation_type, description[:100])
         if src and tgt and src != tgt and key not in edge_set:
-            edges.append({"source": src, "target": tgt, "relationship": relationship, "relation_type": relation_type})
+            edges.append({
+                "source": src,
+                "target": tgt,
+                "relationship": relationship,
+                "relation_type": relation_type,
+                "description": description
+            })
             edge_set.add(key)
 
     for e in pred_edges or []:
@@ -226,13 +252,12 @@ def convert_to_final_kg(
         if u not in node_name_set or v not in node_name_set:
             logger.debug(f"[Pred] 跳过边（节点缺失）: {u} - {v}")
             continue
-        # 获取pred边的关系类型和描述
         llm_info = e.get("llm", {}) or {}
-        rel_type = llm_info.get("type", "predicted").strip()
-        description = llm_info.get("description", "").strip() or rel_type
-        add_pred_edge(u, v, "pred", description)
+        rel_type = (llm_info.get("type") or "未分类").strip()
+        rel_desc = (llm_info.get("description") or f"{u}与{v}存在关联").strip()
+        add_pred_edge(u, v, "pred", rel_type, rel_desc)
 
-    # 生成最终KG
+    # 生成最终 KG
     kg = {"nodes": nodes + final_toc_nodes, "edges": edges}
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding="utf-8") as f:
@@ -240,12 +265,16 @@ def convert_to_final_kg(
 
     # 输出统计信息
     print(f"✅ 最终知识图谱：{out_path.resolve()}")
-    print(f"- TOC 节点：{toc_node_count}，TOC 自身边：{toc_edge_count}")
+    print(f"- TOC 节点：{toc_node_count}，TOC 自身边（原始）{toc_edge_count}")
     print(f"- 核心节点：{core_count}，非核心节点：{non_core_count}")
     print(f"- 总节点：{len(kg['nodes'])}，总边：{len(kg['edges'])}")
-    logger.info(f"边类型分布：TOC自身边 {toc_edge_count} 条，TOC→core边 {sum(1 for e in edges if e['relationship']=='toc→core')} 条，"
-                f"core→non-core边 {sum(1 for e in edges if e['relationship']=='core→non-core')} 条，"
-                f"pred预测边 {sum(1 for e in edges if e['relationship']=='pred')} 条")
+    logger.info(
+        "边类型分布："
+        f"TOC→TOC {sum(1 for e in edges if e['relationship']=='toc→toc')} 条，"
+        f"TOC→core {sum(1 for e in edges if e['relationship']=='toc→core')} 条，"
+        f"core→non-core {sum(1 for e in edges if e['relationship']=='core→non-core')} 条，"
+        f"pred {sum(1 for e in edges if e['relationship']=='pred')} 条"
+    )
 
 # =============== 主入口 ===============
 def main():
