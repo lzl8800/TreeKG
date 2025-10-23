@@ -139,7 +139,6 @@ def _iter_toc_nodes(toc: List[Dict[str, Any]], parent_path=""):
         for child in node.get("children", []) or []:
             yield from _iter_toc_nodes([child], path)
 
-
 def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
     """
     从 TOC 载入实体，并根据“同小节共现”统计全局权重，按权重排序写入 neighbors。
@@ -179,6 +178,8 @@ def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
             leaf_bucket.setdefault(node_id, []).extend(triples)
 
     # 2) 统计“全局共现次数”（跨小节累积）
+    from collections import defaultdict
+    from itertools import combinations
     cooccur = defaultdict(int)  # key=(a,b) a<b
     # 也记录：为某个 name->other 的最佳“示例小节”（方便写到 snippet 里）
     best_example: Dict[Tuple[str, str], Tuple[int, str, str, str]] = {}
@@ -213,8 +214,6 @@ def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
 
     for name, ent in entities.items():
         # 收集所有与 name 共现过的 other
-        nb_map: Dict[str, Neighbor] = {}
-        # 找出所有二元组中涉及 name 的 other
         touched = set()
         for (a, b), w in cooccur.items():
             if a == name:
@@ -249,6 +248,7 @@ def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
         for b in list(has):
             if a not in {n.name for n in entities[b].neighbors}:
                 # 估算对应 cooccur 权重和示例（反向）
+                from re import search
                 w, sec_id, sec_title, raw_a = best_example.get((b, a), (1, "", "", ""))
                 w = max(w, cooccur[(a, b) if a < b else (b, a)])
                 snip = f"cooccur|undirected|w={w}|sec={_safe(sec_id)}|title={_safe(sec_title)}|raw={_safe(raw_a)[:80]}"
@@ -265,28 +265,42 @@ def load_entities_from_toc(file_path: Path) -> Dict[str, EntityItem]:
     logger.info(f"[TOC] 加载实体 {len(entities)} 个；来自文件：{file_path}")
     return entities
 
-
-# ========== Prompt ==========
+# ========== Prompt（从配置读取） ==========
 def build_system_prompt() -> str:
-    return (
-        "你是“MATLAB科学计算课程知识图谱专家”。"
-        "请基于邻域关系增强实体描述，保持术语准确，中文输出，200–300字以内。"
+    # 从 ConvConfig 读取，提供与旧版一致的默认值
+    return ConvConfig.get(
+        "PROMPT_SYSTEM",
+        "你是“MATLAB科学计算课程知识图谱专家”。请基于邻域关系增强实体描述，保持术语准确，中文输出，200–300字以内。"
     )
 
 def build_user_prompt(entity: EntityItem) -> str:
+    # 将邻居与出现位置拼接为模板所需变量，然后套入 ConvConfig 的模板
     neighbor_lines = []
     for nb in entity.neighbors:
         snip = (nb.snippet or "").replace("\n", " ").strip()
         neighbor_lines.append(f"- {nb.name}：{snip}" if snip else f"- {nb.name}")
-    occ_str = "; ".join([o.path for o in entity.occurrences[:3]])
-    return (
-        f"目标实体：{entity.name}\n"
-        f"原始描述：{entity.original or '（无描述）'}\n"
-        f"出现位置：{occ_str or '（无）'}\n"
-        f"邻域实体：\n" + "\n".join(neighbor_lines) + "\n"
-        "任务：基于上下文生成增强描述，聚焦其定义、作用及与邻域的关系。\n"
-        "输出要求：仅返回JSON，不添加任何多余文字（如解释、说明、换行）！\n"
-        "请返回JSON：{\"name\": \"实体名\", \"updated_description\": \"增强后的描述\"}"
+    neighbors_block = "\n".join(neighbor_lines) if neighbor_lines else "（无）"
+
+    occ_str = "; ".join([o.path for o in entity.occurrences[:3]]) or "（无）"
+
+    tpl = ConvConfig.get("PROMPT_USER_TEMPLATE")
+    if not tpl:
+        # 兜底模板：与历史逻辑等价
+        tpl = (
+            "目标实体：{entity_name}\n"
+            "原始描述：{original_desc}\n\n"
+            "出现位置（最多3处）：{occurrences}\n\n"
+            "邻域实体：\n{neighbors}\n\n"
+            "任务：基于上下文生成增强描述，聚焦其定义、作用及与邻域的关系。\n"
+            "输出要求：仅返回JSON，不添加任何多余文字（如解释、说明、换行）！\n"
+            "请返回JSON：{\"name\": \"实体名\", \"updated_description\": \"增强后的描述\"}"
+        )
+
+    return tpl.format(
+        entity_name=entity.name,
+        original_desc=entity.original or "（无描述）",
+        occurrences=occ_str,
+        neighbors=neighbors_block
     )
 
 # ========== 限速 ==========
