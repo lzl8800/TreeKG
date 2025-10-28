@@ -146,7 +146,7 @@ def main():
     ap = argparse.ArgumentParser(description="可视化 final_kg.json（vis-network）")
     ap.add_argument("--kg", type=str,
                     default="./output/final_kg.json",
-                    help="final_kg.json 路径（默认：./HiddenKG/output/final_kg.json）")
+                    help="final_kg.json 路径（默认：./output/final_kg.json）")
     ap.add_argument("--out", type=str,
                     default="./output/final_kg.html",
                     help="输出 HTML 路径（默认：./HiddenKG/output/final_kg.html）")
