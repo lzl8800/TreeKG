@@ -52,7 +52,9 @@ for inc in includes:
 APIConfig = config.get("APIConfig", {})
 AggrCfg   = config.get("AggrConfig", {})
 
-
+# 小工具：从 AggrCfg 取值（带默认）
+def A(key: str, default=None):
+    return AggrCfg.get(key, default)
 
 # =========================
 # 路径拼接
@@ -63,9 +65,9 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 名字到实际路径
-CONV_IN_PATH = OUTPUT_DIR / AggrCfg.get("CONV_IN_NAME", "conv_entities.json")
-AGGR_OUT_PATH = OUTPUT_DIR / AggrCfg.get("OUT_NAME", "aggr_entities.json")
-LOG_PATH = LOGS_DIR / AggrCfg.get("LOG_NAME", "aggr.log")
+CONV_IN_PATH  = OUTPUT_DIR / A("CONV_IN_NAME", "conv_entities.json")
+AGGR_OUT_PATH = OUTPUT_DIR / A("OUT_NAME", "aggr_entities.json")
+LOG_PATH      = LOGS_DIR / A("LOG_NAME", "aggr.log")
 
 # =========================
 # 日志
@@ -80,28 +82,12 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Aggr")
 
-# =========================
-# 运行参数
-# =========================
-TEMPERATURE = float(AggrCfg.get("TEMPERATURE", 0.0))
-MAX_TOKENS  = int(AggrCfg.get("MAX_TOKENS", 24))
-API_TIMEOUT = int(AggrCfg.get("API_TIMEOUT", 120))
-RETRIES     = int(AggrCfg.get("RETRIES", 3))
-CHAT_COMPLETIONS_PATH = AggrCfg.get("CHAT_COMPLETIONS_PATH", "/chat/completions")
-DRY_RUN     = bool(int(AggrCfg.get("DRY_RUN", 0)))
-
-API_BASE = APIConfig.get("API_BASE", "")
-API_KEY  = APIConfig.get("API_KEY", "")
-MODEL    = APIConfig.get("MODEL_NAME", "")
-
 # 复用长连接
 SESSION = requests.Session()
 
 # =========================
 # 数据结构
 # =========================
-from dataclasses import dataclass
-
 @dataclass
 class Occurrence:
     path: str
@@ -129,16 +115,8 @@ class EntityItem:
 # 提示词 & 解析
 # =========================
 def build_system_prompt() -> str:
-    return (
-        "你是知识图谱构建专家。任务：判断实体是否为核心（core）或非核心（non-core）。\n"
-        "规则：\n"
-        "- core 实体通常是该领域的核心概念或重要术语（如主要学科概念、关键技术）。\n"
-        "- non-core 实体通常是附属、具体或次要术语（如具体应用、辅助工具）。\n"
-        "请严格按以下格式作答：\n"
-        "第一行：只输出 core 或 non-core（不加标点、不加解释）\n"
-        "第二行起：若需要再给出简要说明。\n"
-        "若不确定，倾向输出 non-core。"
-    )
+    prompts = (AggrCfg.get("PROMPTS") or {})
+    return (prompts.get("system") or "").strip()
 
 def _truncate(s: str, n: int) -> str:
     s = (s or "").strip()
@@ -201,48 +179,58 @@ def _parse_role(text: str) -> str:
 
 def call_llm(system_prompt: str, user_prompt: str):
     """调用 OpenAI 兼容 /chat/completions；支持无鉴权本地网关"""
-    if DRY_RUN:
+    if bool(A("DRY_RUN", 0)):
         return "", False, "dry_run_enabled", 0, True
-    if not API_BASE:
+
+    api_base = APIConfig.get("API_BASE", "")
+    api_key  = APIConfig.get("API_KEY", "")
+    model    = APIConfig.get("MODEL_NAME", "")
+
+    if not api_base:
         logger.warning("API_BASE 为空，跳过 LLM 调用。")
         return "", False, "api_base_empty", 0, False
 
     headers = {"Content-Type": "application/json"}
-    if API_KEY:
-        headers["Authorization"] = f"Bearer {API_KEY}"
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
 
     payload = {
-        "model": MODEL,
+        "model": model,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
-        "temperature": TEMPERATURE,
-        "max_tokens": MAX_TOKENS,
+        "temperature": float(A("TEMPERATURE", 0.0)),
+        "max_tokens": int(A("MAX_TOKENS", 24)),
         "top_p": 1,
         "frequency_penalty": 0,
         "presence_penalty": 0,
     }
 
+    timeout   = int(A("API_TIMEOUT", 120))
+    retries   = int(A("RETRIES", 3))
+    path      = A("CHAT_COMPLETIONS_PATH", "/chat/completions")
+
     last_err = ""
-    for attempt in range(1, RETRIES + 1):
+    for attempt in range(1, retries + 1):
         try:
             resp = SESSION.post(
-                f"{API_BASE}{CHAT_COMPLETIONS_PATH}",
+                f"{api_base}{path}",
                 headers=headers,
                 json=payload,
-                timeout=API_TIMEOUT,
+                timeout=timeout,
             )
             resp.raise_for_status()
             content = resp.json()["choices"][0]["message"]["content"].strip()
+            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
             if content:
                 return content, True, "", attempt, False
             last_err = "empty_content"
         except Exception as e:
             last_err = str(e)
-            logger.warning(f"LLM 调用失败(第 {attempt}/{RETRIES} 次)：{last_err}")
+            logger.warning(f"LLM 调用失败(第 {attempt}/{retries} 次)：{last_err}")
             time.sleep(2 ** attempt)
-    return "", False, last_err or "unknown_error", RETRIES, False
+    return "", False, last_err or "unknown_error", retries, False
 
 def _fallback_role(entity: EntityItem) -> Tuple[str, str]:
     score = len(entity.occurrences) + 0.5 * len(entity.neighbors)
