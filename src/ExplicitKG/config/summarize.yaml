@@ -1,7 +1,7 @@
 # config/summarize.yaml
 SummarizeConfig:
   # —— I/O —— #
-  DOCX_NAME: "MATLAB完全自学一本通.docx"  # 书籍 .docx 文件名
+  DOCX_NAME: "MATLAB与科学计算.docx"  # 书籍 .docx 文件名
   TOC_NAME: "toc_structure.json"           # 上一步生成的 toc_structure.json 文件名
   OUT_NAME: "toc_with_summaries.json"  # 输出 JSON 文件名
   ENCODING: "utf-8"
@@ -22,7 +22,7 @@ SummarizeConfig:
 
   # —— 提示词模板 —— #
   LEAF_PROMPT: |
-    Role: 你是教材内容提炼专家，擅长提炼关键概念与术语。
+    Role: 你是内容提炼专家，擅长提炼关键概念与术语。
     Task: 为以下小节正文生成 {target_len} 字左右的中文摘要，必须忠于原文，不添加外部知识。
     Constraints:
     - 语言简洁，保留学术术语
@@ -32,7 +32,7 @@ SummarizeConfig:
     {content}
 
   AGG_PROMPT: |
-    Role: 你是教材内容提炼专家，擅长将多段小节摘要压缩为上级摘要。
+    Role: 你是内容提炼专家，擅长将多段小节摘要压缩为上级摘要。
     Task: 基于下列子节点摘要，生成 {target_len} 字左右的中文上级摘要（覆盖要点、突出层次）。
     Constraints:
     - 覆盖所有子摘要中的核心概念/术语
