@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Pred.py — Tree-KG §3.3.5 边预测（挖掘隐藏关系 · 语义+结构）
-- 读取 HiddenKG/config/config.yaml 并合并 include_files（相对 config 目录解析）
-- 路径只存文件名，代码统一拼接 HiddenKG/output
-- 详细日志记录到 logs 文件夹，终端只输出必要信息
-"""
-
 from __future__ import annotations
 
 import os
@@ -15,7 +7,6 @@ import time
 import math
 import pickle
 import logging
-import argparse
 from dataclasses import dataclass, field
 from typing import Dict, List, Tuple, Set, DefaultDict, Any, Optional
 
@@ -26,7 +17,6 @@ import requests
 from collections import defaultdict
 from pathlib import Path
 import yaml
-
 
 # ========== 配置加载 ==========
 def load_merged_config() -> dict:
@@ -64,7 +54,7 @@ _LOG_DIR = _HIDDEN_DIR / "logs"
 _LOG_DIR.mkdir(parents=True, exist_ok=True)
 _LOG_FILE = _LOG_DIR / f"pred_{time.strftime('%Y%m%d_%H%M%S')}.log"
 
-# 数据文件（默认）
+# 数据文件（默认，按“仅文件名，统一拼接到 output”约定）
 DEDUP_PATH_DEFAULT = _OUT_DIR / PRED["DEDUP_NAME"]
 EMB_PATH_DEFAULT = _OUT_DIR / PRED["EMBEDDINGS_NAME"]
 PRED_OUT_DEFAULT = _OUT_DIR / PRED["RESULT_NAME"]
@@ -75,7 +65,6 @@ SESSION = requests.Session()
 API_BASE = API.get("API_BASE", "")
 API_KEY = (API.get("API_KEY") or "").strip()
 MODEL_NAME = API.get("MODEL_NAME", "")
-
 
 # ========== 日志：终端简洁，文件详细 ==========
 def setup_logging():
@@ -94,18 +83,15 @@ def setup_logging():
     logger.addHandler(ch)
     logger.addHandler(fh)
 
-
 setup_logging()
 logger = logging.getLogger()
 
 DEBUG_LLM_DEFAULT = bool(PRED.get("DEBUG_LLM_DEFAULT", False))
-DEBUG_LLM = False
-
+DEBUG_LLM = DEBUG_LLM_DEFAULT
 
 def _dbg(msg: str) -> None:
     if DEBUG_LLM:
         logger.debug(f"[DEBUG_LLM] {msg}")
-
 
 # --------------------------
 # 数据结构
@@ -115,14 +101,12 @@ class Neighbor:
     name: str
     snippet: str = ""  # 关系类型：entity_related|undirected|{具体关系}
 
-
 @dataclass
 class Occurrence:
     path: str
     node_id: str
     level: int
     title: str
-
 
 @dataclass
 class EntityItem:
@@ -135,18 +119,14 @@ class EntityItem:
     occurrences: List[Occurrence] = field(default_factory=list)
     neighbors: List[Neighbor] = field(default_factory=list)
 
-
 # --------------------------
 # 工具函数
-# --------------------------
 def clean_path(path: str) -> str:
     return (path or "").strip().strip("/")
-
 
 def get_entity_text(ent: EntityItem) -> str:
     txt = (ent.updated_description or ent.original or ent.name or "").strip()
     return txt[:300] if txt else ent.name
-
 
 def safe_json_loads(txt: str) -> Dict[str, Any]:
     """容错 JSON 解析：优先严格，失败后剪出第一个 {...} 再试"""
@@ -173,10 +153,8 @@ def safe_json_loads(txt: str) -> Dict[str, Any]:
 
     return {}
 
-
 # --------------------------
 # 数据读取
-# --------------------------
 def read_dedup(path: str) -> Tuple[Dict[str, EntityItem], Dict[str, Set[str]]]:
     logger.info(f"[步骤1/5] 载入去重结果：{os.path.basename(path)}")
     logger.debug(f"[read_dedup] 路径：{os.path.abspath(path)}")
@@ -220,7 +198,6 @@ def read_dedup(path: str) -> Tuple[Dict[str, EntityItem], Dict[str, Set[str]]]:
     logger.info(f"[步骤1/5] 载入完成：实体 {len(ents)} 个")
     return ents, adj
 
-
 def read_embeddings(pkl_path: str) -> Tuple[List[str], np.ndarray]:
     logger.info(f"[步骤1/5] 载入节点嵌入：{os.path.basename(pkl_path)}")
     logger.debug(f"[read_embeddings] 路径：{os.path.abspath(pkl_path)}")
@@ -244,10 +221,8 @@ def read_embeddings(pkl_path: str) -> Tuple[List[str], np.ndarray]:
     logger.info(f"[步骤1/5] 嵌入载入完成：{len(names)} 个实体，维度 {embs.shape[1]}")
     return names, embs
 
-
 # --------------------------
 # 结构特征
-# --------------------------
 def adamic_adar(u_name: str, v_name: str, adj: Dict[str, Set[str]]) -> float:
     u_neighbors = adj.get(u_name, set())
     v_neighbors = adj.get(v_name, set())
@@ -261,14 +236,12 @@ def adamic_adar(u_name: str, v_name: str, adj: Dict[str, Set[str]]) -> float:
 
     return round(aa_score, 6)
 
-
 def extract_ancestors(occ: Occurrence, max_levels: int = 10) -> List[str]:
     path = clean_path(occ.path)
     if not path:
         return []
     parts = path.split("/")
     return ["/".join(parts[:i]) for i in range(1, min(len(parts), max_levels) + 1)]
-
 
 def common_ancestors(u: EntityItem, v: EntityItem, granularity: int = 2) -> int:
     u_anc, v_anc = set(), set()
@@ -284,16 +257,13 @@ def common_ancestors(u: EntityItem, v: EntityItem, granularity: int = 2) -> int:
         v_anc.update(anc)
     return len(u_anc & v_anc)
 
-
 def is_same_minimal_section(u: EntityItem, v: EntityItem) -> bool:
     u_paths = {clean_path(o.path) for o in u.occurrences if o.path}
     v_paths = {clean_path(o.path) for o in v.occurrences if o.path}
     return len(u_paths & v_paths) > 0
 
-
 # --------------------------
 # LLM 关系评估
-# --------------------------
 def llm_score_relation(
         u_name: str,
         v_name: str,
@@ -389,48 +359,49 @@ def llm_score_relation(
     logger.error(f"[LLM评估] {u_name}-{v_name}：{fallback_msg}")
     return {"is_relevant": False, "type": "", "strength": 0, "description": fallback_msg, "raw": "", "debug": fallback_msg}
 
-
 # --------------------------
 # 主流程
-# --------------------------
-def run_pred(
-        dedup_path: str = str(DEDUP_PATH_DEFAULT),
-        emb_pkl: str = str(EMB_PATH_DEFAULT),
-        out_dir: str = str(_OUT_DIR),
-        cos_min: float = float(PRED.get("COS_MIN", 0.62)),
-        stage: int = int(PRED.get("STAGE_DEFAULT", 1)),
-        beta: Optional[float] = None,
-        gamma: Optional[float] = None,
-        alpha: float = float(PRED.get("ALPHA", 0.6)),
-        cross_section_only: bool = bool(PRED.get("CROSS_SECTION_ONLY", False)),
-        topk: int = int(PRED.get("TOPK", 400)),
-        per_node_cap: int = int(PRED.get("PER_NODE_CAP", 6)),
-        workers: int = int(PRED.get("WORKERS", 6)),
-        strength_min: int = int(PRED.get("STRENGTH_MIN", 7)),
-        debug_llm: bool = DEBUG_LLM_DEFAULT
-) -> None:
+def run_pred() -> None:
+    """
+    纯配置驱动：所有参数从 PredConfig 读取；不接收命令行参数
+    """
     t_start = time.time()
-    os.makedirs(out_dir, exist_ok=True)
-    global DEBUG_LLM
-    DEBUG_LLM = debug_llm
 
+    # ---- 从配置读取所有参数 ----
+    dedup_path = str(DEDUP_PATH_DEFAULT)
+    emb_pkl = str(EMB_PATH_DEFAULT)
+    out_dir = str(_OUT_DIR)
+
+    cos_min = float(PRED.get("COS_MIN", 0.62))
+    stage = int(PRED.get("STAGE_DEFAULT", 1))
+    alpha = float(PRED.get("ALPHA", 0.6))
+    cross_section_only = bool(PRED.get("CROSS_SECTION_ONLY", False))
+    topk = int(PRED.get("TOPK", 400))
+    per_node_cap = int(PRED.get("PER_NODE_CAP", 6))
+    workers = int(PRED.get("WORKERS", 6))
+    strength_min = int(PRED.get("STRENGTH_MIN", 7))
+
+    # beta/gamma 默认按 stage 切换
+    if stage == 1:
+        beta = float(PRED.get("BETA_STAGE1", 0.25))
+        gamma = float(PRED.get("GAMMA_STAGE1", 0.15))
+    else:
+        beta = float(PRED.get("BETA_STAGE2", 0.20))
+        gamma = float(PRED.get("GAMMA_STAGE2", 0.20))
+
+    # ---- 检查 API 配置 ----
     if not API_BASE or not MODEL_NAME:
         logger.error("API 配置不完整（API_BASE 或 MODEL_NAME 缺失），无法执行 LLM 评估")
         raise ValueError("API配置不完整（API_BASE 或 MODEL_NAME 缺失）")
 
+    # ---- 日志头 ----
     logger.info("=" * 64)
     logger.info(f"[Tree-KG边预测] 启动（Stage {stage}）")
     logger.info("=" * 64)
-
-    if beta is None or gamma is None:
-        if stage == 1:
-            beta = float(PRED.get("BETA_STAGE1", 0.25))
-            gamma = float(PRED.get("GAMMA_STAGE1", 0.15))
-        else:
-            beta = float(PRED.get("BETA_STAGE2", 0.20))
-            gamma = float(PRED.get("GAMMA_STAGE2", 0.20))
     logger.info(f"[参数配置] 权重：α={alpha}（余弦）, β={beta}（AA）, γ={gamma}（CA）")
     logger.info(f"[参数配置] 筛选：cos_min={cos_min}, strength_min={strength_min}, topk={topk}")
+    logger.info(f"[参数配置] per_node_cap={per_node_cap}, workers={workers}, cross_section_only={cross_section_only}")
+    logger.info(f"[路径配置] dedup={dedup_path} | emb={emb_pkl} | out_dir={out_dir}")
 
     # 1. 数据载入与对齐
     logger.info("\n[步骤1/5] 数据载入与对齐...")
@@ -474,6 +445,7 @@ def run_pred(
     if not candidates:
         logger.warning("无有效候选对，提前结束流程")
         _write_edges(out_dir, [])
+        _tail_log(t_start)
         return
 
     # 4. 结构特征 + 综合评分
@@ -511,6 +483,7 @@ def run_pred(
     if not quota_candidates:
         logger.warning("无候选对进入 LLM 评估，提前结束流程")
         _write_edges(out_dir, [])
+        _tail_log(t_start)
         return
 
     # 6. LLM 评估
@@ -559,83 +532,27 @@ def run_pred(
     logger.info(f"  保留边：{len(final_edges)} 条（{retention_rate:.1f}%）")
 
     # 输出：仅边列表
-    out_path = str(PRED_OUT_DEFAULT) if out_dir == str(_OUT_DIR) else os.path.join(out_dir, os.path.basename(PRED_OUT_DEFAULT))
+    out_path = str(PRED_OUT_DEFAULT)  # 统一输出到 HiddenKG/output
     _write_edges_to_file(out_path, final_edges)
     logger.info(f"[结果输出] 完成：{os.path.abspath(out_path)}（仅边，共 {len(final_edges)} 条）")
 
+    _tail_log(t_start)
+
+def _tail_log(t_start: float) -> None:
     total_duration = round(time.time() - t_start, 2)
     logger.info("\n" + "=" * 64)
-    logger.info(f"[Tree-KG边预测] 流程结束（Stage {stage}），耗时 {total_duration} 秒")
+    logger.info(f"[Tree-KG边预测] 流程结束，耗时 {total_duration} 秒")
     logger.info(f"详细日志：{os.path.abspath(str(_LOG_FILE))}")
     logger.info("=" * 64)
-
 
 def _write_edges(out_dir: str, edges: List[Dict[str, Any]]) -> None:
     out_path = str(PRED_OUT_DEFAULT) if out_dir == str(_OUT_DIR) else os.path.join(out_dir, os.path.basename(PRED_OUT_DEFAULT))
     _write_edges_to_file(out_path, edges)
-
 
 def _write_edges_to_file(out_path: str, edges: List[Dict[str, Any]]) -> None:
     with open(out_path, "w", encoding=ENCODING) as f:
         json.dump(edges, f, ensure_ascii=False, indent=2)
 
 
-# --------------------------
-# CLI
-# --------------------------
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Tree-KG 边预测（§3.3.5）- 挖掘隐藏关系")
-    parser.add_argument("--dedup", type=str, default=str(DEDUP_PATH_DEFAULT),
-                        help=f"去重结果文件路径（默认：{DEDUP_PATH_DEFAULT}）")
-    parser.add_argument("--emb", type=str, default=str(EMB_PATH_DEFAULT),
-                        help=f"节点嵌入文件路径（默认：{EMB_PATH_DEFAULT}）")
-    parser.add_argument("--out", type=str, default=str(_OUT_DIR),
-                        help=f"结果输出目录（默认：{_OUT_DIR}）")
-    parser.add_argument("--stage", type=int, choices=[1, 2], default=int(PRED.get("STAGE_DEFAULT", 1)),
-                        help="预测阶段（1：全量候选，2：跨章节候选，默认：1）")
-    parser.add_argument("--cos_min", type=float, default=float(PRED.get("COS_MIN", 0.62)),
-                        help="余弦相似度筛选阈值（默认：0.62）")
-    parser.add_argument("--beta", type=float, default=None,
-                        help=f"AA指数权重（默认：Stage1=0.25，Stage2=0.20）")
-    parser.add_argument("--gamma", type=float, default=None,
-                        help=f"共同祖先权重（默认：Stage1=0.15，Stage2=0.20）")
-    parser.add_argument("--alpha", type=float, default=float(PRED.get("ALPHA", 0.6)),
-                        help="余弦相似度权重（默认：0.6）")
-    parser.add_argument("--cross_section_only", action="store_true",
-                        default=bool(PRED.get("CROSS_SECTION_ONLY", False)),
-                        help="仅保留跨章节候选对（仅Stage2生效，默认：False）")
-    parser.add_argument("--topk", type=int, default=int(PRED.get("TOPK", 400)),
-                        help="进入LLM评估的候选对数量上限（默认：400）")
-    parser.add_argument("--per_node_cap", type=int, default=int(PRED.get("PER_NODE_CAP", 6)),
-                        help="单个节点的候选对配额上限（默认：6）")
-    parser.add_argument("--workers", type=int, default=int(PRED.get("WORKERS", 6)),
-                        help="LLM评估的并发线程数（默认：6）")
-    parser.add_argument("--strength_min", type=int, default=int(PRED.get("STRENGTH_MIN", 7)),
-                        help="LLM强度阈值（≥此值保留，默认：7）")
-    parser.add_argument("--debug_llm", action="store_true", default=DEBUG_LLM_DEFAULT,
-                        help="开启LLM调试日志（默认：False）")
-
-    args = parser.parse_args()
-    cli_params = [f"{k}={v}" for k, v in vars(args).items()]
-    logger.info(f"[CLI] 启动参数：{', '.join(cli_params)}")
-
-    run_pred(
-        dedup_path=args.dedup,
-        emb_pkl=args.emb,
-        out_dir=args.out,
-        cos_min=args.cos_min,
-        stage=args.stage,
-        beta=args.beta,
-        gamma=args.gamma,
-        alpha=args.alpha,
-        cross_section_only=args.cross_section_only,
-        topk=args.topk,
-        per_node_cap=args.per_node_cap,
-        workers=args.workers,
-        strength_min=args.strength_min,
-        debug_llm=args.debug_llm
-    )
-
-
 if __name__ == "__main__":
-    main()
+    run_pred()
