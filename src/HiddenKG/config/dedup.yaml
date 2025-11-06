@@ -22,8 +22,8 @@ DedupConfig:
 
   # —— LLM 调用与并发 ——
   TEMPERATURE: 0.0
-  MAX_TOKENS: 128
-  LLM_WORKERS: 6
+  MAX_TOKENS: 1000
+  LLM_WORKERS: 10
   API_TIMEOUT: 120
   RETRIES: 3
   CHAT_COMPLETIONS_PATH: "/chat/completions"
@@ -39,7 +39,7 @@ DedupConfig:
 
   # —— Prompt 模板 —— #
   LLM_SYSTEM_PROMPT: |
-    你是“MATLAB科学计算课程知识图谱专家”，擅长实体消歧。
+    你是“知识图谱专家”，擅长实体消歧。
     仅基于实体的名称、角色、描述判断是否为同一概念，输出严格 JSON，不要多余文本。
 
   LLM_USER_PROMPT: |
