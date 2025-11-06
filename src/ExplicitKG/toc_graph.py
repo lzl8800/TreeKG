@@ -1,4 +1,3 @@
-# ExplicitKG/toc_graph.py
 import json
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
@@ -13,12 +12,20 @@ def extract_toc_entities_and_relations(input_path: Path, output_path: Path):
 
     entity_count = 0
     relation_count = 0
-    node_id_map: Dict[str, int] = {}  # section_id -> node_id
+
+    # 去重：按 section_id 记录已创建的节点（避免重复）
+    created_by_section_id: Dict[str, str] = {}  # section_id -> node_name(title)
 
     # 递归处理每个顶层章节
     for section in toc_data:
         entity_count, relation_count = process_section(
-            section, nodes, edges, entity_count, relation_count, node_id_map
+            section=section,
+            nodes=nodes,
+            edges=edges,
+            entity_count=entity_count,
+            relation_count=relation_count,
+            created_by_section_id=created_by_section_id,
+            parent_node_name=None,  # 顶层无父节点
         )
 
     graph_data = {
@@ -43,12 +50,17 @@ def process_section(
     edges: List[Dict[str, Any]],
     entity_count: int,
     relation_count: int,
-    node_id_map: Dict[str, int],
-    parent_node_id: Optional[int] = None
+    created_by_section_id: Dict[str, str],
+    parent_node_name: Optional[str] = None,
 ) -> Tuple[int, int]:
-    """递归处理每一层的章节节点及其关系（仅 level 1/2/3）"""
-    section_id = section.get("id", "")
-    section_title = section.get("title", "")
+    """
+    递归处理每一层的章节节点及其关系（仅 level 1/2/3）
+    - 节点：用 title 作为 name
+    - 边：用父节点的 name -> 子节点的 name
+    """
+    section_id = (section.get("id") or "").strip()
+    section_title = (section.get("title") or "").strip()
+
     # level 可能是字符串，这里统一成 int
     try:
         section_level = int(section.get("level", 0) or 0)
@@ -59,31 +71,30 @@ def process_section(
     if section_level not in (1, 2, 3):
         return entity_count, relation_count
 
-    # —— 创建实体（节点）——
+    # —— 创建/记录节点 ——（按 section_id 去重）
     if section_title:
-        # 为每个节点生成唯一 ID（递增）
-        if section_id not in node_id_map:
-            node_id = len(node_id_map) + 1
-            node_id_map[section_id] = node_id
-        else:
-            node_id = node_id_map[section_id]
+        # 如果该 section_id 未创建过节点，则创建新节点
+        if section_id not in created_by_section_id:
+            created_by_section_id[section_id] = section_title  # 记录 name
 
-        nodes.append({
-            "id": node_id,
-            "name": section_title,                 # 用 title 作为 name
-            "title": section_title,
-            "type": f"level{section_level}",       # level1/level2/level3
-            "description": section_id              # 用章节编号做描述
-        })
-        entity_count += 1
+            nodes.append({
+                "name": section_title,               # 可视化或后续处理统一读 name
+                "title": section_title,              # 冗余保留
+                "level": f"level{section_level}",     # level1/level2/level3
+                "description": section_id            # 用章节编号做描述
+            })
+            entity_count += 1
 
-        # —— 父子关系边 ——（父->子）
-        if parent_node_id is not None:
+        # 当前节点名称（后续给子节点连边用）
+        current_node_name = created_by_section_id[section_id]
+
+        # —— 父子关系边 ——（父 name -> 子 name）
+        if parent_node_name:
             edges.append({
-                "source": parent_node_id,
-                "target": node_id,
+                "source": parent_node_name,
+                "target": current_node_name,
                 "relationship": "child_of",
-                "description": f"{parent_node_id} -> {node_id}"
+                "description": f"{parent_node_name} -> {current_node_name}"
             })
             relation_count += 1
     else:
@@ -93,7 +104,13 @@ def process_section(
     # —— 递归子节点 ——（同样只保留到 level 3）
     for child in section.get("children", []) or []:
         entity_count, relation_count = process_section(
-            child, nodes, edges, entity_count, relation_count, node_id_map, node_id
+            section=child,
+            nodes=nodes,
+            edges=edges,
+            entity_count=entity_count,
+            relation_count=relation_count,
+            created_by_section_id=created_by_section_id,
+            parent_node_name=current_node_name,  # 用 name 作为父节点标识
         )
 
     return entity_count, relation_count
