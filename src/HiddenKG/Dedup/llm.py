@@ -1,13 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-HiddenKG/Dedup/llm.py — YAML配置直读版
-- 统一从 HiddenKG/config/config.yaml 读取主配置，并合并 include_files（相对 config.yaml 解析）
-- 使用 APIConfig + DedupConfig 的参数（温度/超时/重试/QPS/节流/退避/路径/DRY_RUN）
-- Prompt 模板直接来自 DedupConfig: LLM_SYSTEM_PROMPT / LLM_USER_PROMPT
-"""
-
 from __future__ import annotations
-
 import json
 import re
 import time
@@ -154,7 +145,10 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
                 timeout=timeout,
             )
             resp.raise_for_status()
-            return resp.json()["choices"][0]["message"]["content"].strip()
+            text = resp.json()["choices"][0]["message"]["content"].strip()
+            text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+            text = text.strip()
+            return text
         except Exception as e:
             last_err = e
             print(f"[WARNING] LLM 调用失败（{k+1}/{retries}）：{str(e)[:120]}")
