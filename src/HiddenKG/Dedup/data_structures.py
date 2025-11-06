@@ -12,6 +12,7 @@ class Occurrence:
 class Neighbor:
     name: str
     snippet: str = ""  # 例 "entity_related|undirected" 或 "has_subordinate|out"
+    type: str = ""
 
 @dataclass
 class EntityItem:
