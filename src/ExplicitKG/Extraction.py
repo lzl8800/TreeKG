@@ -44,9 +44,6 @@ config = load_yaml(config_file)
 additional_config = load_additional_configs(config.get('include_files', []), base_dir=config_dir)
 config.update(additional_config)
 
-print("Merged config:", config)
-
-
 # ===== OpenAI 配置 =====
 openai.api_base = config['APIConfig']['API_BASE']
 openai.api_key = config['APIConfig']['API_KEY']
