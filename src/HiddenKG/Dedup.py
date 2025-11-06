@@ -1,13 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Dedup.py — Tree-KG §3.3.4 实体去重（纯 YAML 配置版）
-
-- 统一从 HiddenKG/config/config.yaml 读取主配置，并解析 include_files（相对主配置目录）
-- 所有路径只存“文件名”，在代码里统一拼到 HiddenKG/output 下
-- 优先使用 aggr 的实体；若不存在则回退到 conv 的实体
-- 结果输出为 HiddenKG/output/<RESULT_NAME>
-"""
-
 import os
 import re
 import json
@@ -30,9 +20,7 @@ from Dedup.llm import llm_is_same, _normalize_name
 from Dedup.name_similarity import _name_jaccard_mode
 
 
-# =========================
-# 配置加载（主配置 + include_files）
-# =========================
+# ===========配置加载（主配置 + include_files）===========
 def load_config_with_includes(main_cfg_path: Path) -> Dict[str, Any]:
     with main_cfg_path.open("r", encoding="utf-8") as f:
         base = yaml.safe_load(f) or {}
@@ -46,9 +34,7 @@ def load_config_with_includes(main_cfg_path: Path) -> Dict[str, Any]:
     return merged
 
 
-# =========================
-# I/O 工具函数
-# =========================
+# ==========I/O 工具函数==========
 def read_entities(infile: str) -> Dict[str, EntityItem]:
     with open(infile, "r", encoding="utf-8") as f:
         raw = json.load(f)
@@ -77,9 +63,7 @@ def read_embeddings(pkl_path: str) -> Tuple[List[str], np.ndarray]:
     return names, embs
 
 
-# =========================
-# 并查集
-# =========================
+# ==========并查集==========
 class DSU:
     def __init__(self, n: int):
         self.fa = list(range(n))
@@ -101,10 +85,7 @@ class DSU:
         self.sz[ra] += self.sz[rb]
         return True
 
-
-# =========================
-# 主流程
-# =========================
+# ==========主流程==========
 def run():
     # —— 路径根：HiddenKG/ —— #
     script_dir = Path(__file__).resolve().parent
@@ -347,7 +328,7 @@ def run():
             rep_map[child.name] = rep_name
         new_entities[rep_name] = rep
 
-    # 邻居重定向
+    # 邻居重定向（保留 type）
     redirect = rep_map.copy()
     for parent_ent in new_entities.values():
         new_neighbors: List[Neighbor] = []
@@ -356,11 +337,11 @@ def run():
             tgt = redirect.get(nb.name, nb.name)
             if tgt == parent_ent.name:
                 continue
-            key = (tgt, nb.snippet)
+            key = (tgt, nb.snippet, getattr(nb, "type", ""))
             if key in seen:
                 continue
             seen.add(key)
-            new_neighbors.append(Neighbor(name=tgt, snippet=nb.snippet))
+            new_neighbors.append(Neighbor(name=tgt, snippet=nb.snippet, type=getattr(nb, "type", "")))
         parent_ent.neighbors = new_neighbors
 
     # 输出
