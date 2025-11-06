@@ -19,25 +19,52 @@ PredConfig:
   CROSS_SECTION_ONLY: false  # Stage2：仅跨小节候选
 
   # —— 候选配额与并发 —— #
-  TOPK: 400                  # 进入 LLM 的全局候选上限（0 表示不限）
+  TOPK: 1000                 # 进入 LLM 的全局候选上限（0 表示不限）
   PER_NODE_CAP: 6            # 单实体候选上限
-  WORKERS: 6                 # LLM 并发数
+  WORKERS: 10                # LLM 并发数
   STRENGTH_MIN: 7            # LLM 判定强度阈值（≥7 保留）
   COMMIT_DEFAULT: false      # 是否把新边写回 dedup_result.json
   DEBUG_LLM_DEFAULT: false   # 调试开关
 
   # —— LLM 调用 —— #
   TEMPERATURE: 0.2
-  MAX_TOKENS: 256
+  MAX_TOKENS: 1000
   API_TIMEOUT: 120
   API_RETRIES: 3
   CHAT_COMPLETIONS_PATH: "/chat/completions"
 
   # —— Prompt 模板 —— #
   PROMPT_SYSTEM: |
-    你是“MATLAB科学计算课程知识图谱专家”。现在需要判断两实体之间是否值得新增一条“相关”边，
+    你是知识图谱专家。需要在以下关系集合内判定【单一、最强】关系：
+    - prerequisite：先修/前置；掌握 A 是理解 B 的必要条件。
+    - part-of：A 是 B 的组成或子概念（层级包含）。
+    - applies-to：A（方法/函数/算法）用于 B（对象/任务/场景）。
+    - example-of：A 是 B 的实例或典型代表（方向 A→B）。
+    - synonym：严格同义或别名（几乎等价）。
+    - contrasts-with：概念/方法在用途、性质上形成对比。
+    - related：相关但不满足以上更强语义（兜底）。
+
+    打分规则（strength 0~10）：
+    - 9–10：教材/描述有明确“前置/包含/用途/同义”等措辞或强事实依据
+    - 7–8：教学常识或多处线索支持
+    - 5–6：弱证据/语义接近但不明确
+    - <5：不成立或不应连边
+
+    【示例（正例）】
+    - A=高斯消去法, B=LU分解 → prerequisite（先学高斯消去理解 LU 分解） strength=8
+    - A=for 循环, B=控制流 → part-of（for 是控制流的一种） strength=9
+    - A=fft 函数, B=离散傅里叶变换 → applies-to（fft 实现 DFT） strength=9
+    - A=最小二乘直线拟合, B=线性回归 → example-of（前者是后者的实例） strength=8
+    - A=伪逆, B=Moore–Penrose 逆 → synonym（严格同义） strength=10
+    - A=直接法, B=迭代法 → contrasts-with（求解思想对比） strength=8
+
+    【示例（反例/边界）】
+    - A=矩阵乘法, B=LU分解 → related（不属于先修/包含/同义/用途）
+    - A=矩阵, B=线性代数 → part-of（方向注意：矩阵 是 线性代数 的组成）
+    - A=plot 函数, B=曲线拟合 → 仅当描述明确用 plot 做拟合可视化时才可判 applies-to，否则 related
+    
     你将综合语义相似（余弦）、结构特征（Adamic–Adar、共同祖先）给出判断。
-    请严格输出 JSON，不要多余文本或解释。
+    只允许输出 JSON，不得包含多余文本。
 
   PROMPT_USER_TEMPLATE: |
     实体A：{u_name}
@@ -51,7 +78,7 @@ PredConfig:
     - AA={aa_val}
     - CA={ca_val}
 
-    任务：判断是否新增“相关”边，并给出类型、强度（0~10）、一句话描述。
+    任务：判断是否新增“相关”边，并给出类型、强度（0~10）、仅返回JSON，不添加任何解释，一句话描述。
     严格输出：
     {{
       "is_relevant": true/false,
