@@ -1,23 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-HiddenKG 第一步：Contextual-based Convolution（conv）
-
-输出：
-  - HiddenKG/output/conv_entities.json
-
-日志：
-  - HiddenKG/logs/conv.log  （详细）
-  - 终端：仅必要信息 + 进度条
-
-依赖：
-  - HiddenKG/config/config.yaml（通过 include_files 引入 config/conv.yaml）
-  - 需要 config 内含:
-      APIConfig: { API_BASE, API_KEY, MODEL_NAME, TIMEOUT_SECS(可选) }
-      ConvConfig: 见 conv.yaml
-"""
-
 from __future__ import annotations
-
 import json
 import time
 import logging
@@ -33,7 +14,7 @@ from itertools import combinations
 import yaml
 from tqdm import tqdm
 import sys
-from concurrent.futures import ThreadPoolExecutor, as_completed  # ← 新增
+from concurrent.futures import ThreadPoolExecutor, as_completed  # 并发
 
 # ========== 配置加载 ==========
 def load_config(config_file: Path) -> dict:
@@ -386,7 +367,7 @@ def run_conv():
     limit = int(limit_env) if limit_env.isdigit() and int(limit_env) > 0 else None
     items = list(entities.items())[:limit] if limit else list(entities.items())
     total = len(items)
-    workers = int(C("WORKERS", 6))  # ← 从配置读取并发数
+    workers = int(C("WORKERS", 6))  # 从配置读取并发数
     start_ts = time.time()
     logger.info(f"共加载 {total} 个实体，并发 {workers}，开始调用 LLM 生成增强描述...")
 
@@ -408,10 +389,16 @@ def run_conv():
             "neighbors": [asdict(nb) for nb in item.neighbors]
         }
 
-    # 并发执行 + 进度条（按完成更新）
+    # —— 这里改为标准 tqdm 进度条 —— #
+    # —— 与 pred 完全同款的 tqdm 用法 —— #
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futures = [ex.submit(_process, it) for it in items]
-        for fut in tqdm(as_completed(futures), total=len(futures), desc="LLM 生成增强描述", ncols=90, file=sys.stdout):
+        for fut in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc="LLM 生成增强描述",
+                ncols=80
+        ):
             try:
                 name, res = fut.result()
                 results[name] = res
