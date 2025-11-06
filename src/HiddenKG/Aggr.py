@@ -1,30 +1,18 @@
-# -*- coding: utf-8 -*-
-"""
-HiddenKG 第一步：实体聚合（Aggr）
-- 读取 HiddenKG/config/config.yaml，并加载其中 include_files（相对 HiddenKG/config/ 拼接）
-- 只使用 YAML 中的名字字段来拼接路径：
-    CONV_IN_NAME -> HiddenKG/output/CONV_IN_NAME
-    OUT_NAME     -> HiddenKG/output/OUT_NAME
-    LOG_NAME     -> HiddenKG/logs/LOG_NAME
-- APIConfig 也从 YAML 读取（继承 ExplicitKG 的 config.yaml 后生效）
-"""
-
 from __future__ import annotations
-
 import json
 import time
 import logging
 import requests
 from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Dict, List, Tuple, Any
+from typing import Dict, List, Tuple, Any, Optional
 import yaml
 from tqdm import tqdm
 import re
+import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
-# =========================
-# 配置加载（YAML）
-# =========================
+# ========================= 配置加载（YAML）
 def load_yaml(path: Path) -> dict:
     with path.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
@@ -37,7 +25,7 @@ CFG_DIR = SCRIPT_DIR / "config"
 MAIN_CFG_PATH = CFG_DIR / "config.yaml"
 config = load_yaml(MAIN_CFG_PATH)
 
-# 递归加载 include_files（相对路径从 HiddenKG/config/ 拼接；绝对路径原样用）
+# 递归加载 include_files（相对 HiddenKG/config/ 拼接；绝对路径原样用）
 includes = config.get("include_files", []) or []
 for inc in includes:
     inc_path = Path(inc)
@@ -51,30 +39,24 @@ for inc in includes:
 # 取出 API 与 Aggr 配置（字典）
 APIConfig = config.get("APIConfig", {})
 AggrCfg   = config.get("AggrConfig", {})
+# 关键修复①：PROMPTS 同时兼容顶层和 AggrConfig 下两种放法
+PROMPTS   = (config.get("PROMPTS") or AggrCfg.get("PROMPTS") or {})
 
-# 小工具：从 AggrCfg 取值（带默认）
-def A(key: str, default=None):
-    return AggrCfg.get(key, default)
-
-# =========================
-# 路径拼接
-# =========================
+# ========================= 路径拼接
 OUTPUT_DIR = SCRIPT_DIR / "output"
 LOGS_DIR   = SCRIPT_DIR / "logs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
 # 名字到实际路径
-CONV_IN_PATH  = OUTPUT_DIR / A("CONV_IN_NAME", "conv_entities.json")
-AGGR_OUT_PATH = OUTPUT_DIR / A("OUT_NAME", "aggr_entities.json")
-LOG_PATH      = LOGS_DIR / A("LOG_NAME", "aggr.log")
+CONV_IN_PATH  = OUTPUT_DIR / AggrCfg.get("CONV_IN_NAME", "conv_entities.json")
+AGGR_OUT_PATH = OUTPUT_DIR / AggrCfg.get("OUT_NAME", "aggr_entities.json")
+LOG_PATH      = LOGS_DIR   / AggrCfg.get("LOG_NAME", "aggr.log")
 
-# =========================
-# 日志
-# =========================
+# ========================= 日志
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(message)s",
+    format="%(message)s",
     handlers=[
         logging.FileHandler(LOG_PATH, encoding="utf-8"),
         logging.StreamHandler()
@@ -82,12 +64,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger("Aggr")
 
-# 复用长连接
-SESSION = requests.Session()
+# ========================= 运行参数
+TEMPERATURE = float(AggrCfg.get("TEMPERATURE", 0.0))
+MAX_TOKENS  = int(AggrCfg.get("MAX_TOKENS", 1000))
+API_TIMEOUT = int(AggrCfg.get("API_TIMEOUT", 120))
+RETRIES     = int(AggrCfg.get("RETRIES", 3))
+CHAT_COMPLETIONS_PATH = AggrCfg.get("CHAT_COMPLETIONS_PATH", "/chat/completions")
+DRY_RUN     = bool(int(AggrCfg.get("DRY_RUN", 0)))
 
-# =========================
-# 数据结构
-# =========================
+LIMIT = int(AggrCfg.get("LIMIT", 0))
+TREE_ENFORCE = bool(int(AggrCfg.get("TREE_ENFORCE", 1)))
+PROGRESS_NCOLS = int(AggrCfg.get("PROGRESS_NCOLS", 100))
+WORKERS = int(AggrCfg.get("WORKERS", os.cpu_count() or 6))
+ENCODING = AggrCfg.get("ENCODING", "utf-8")
+
+API_BASE = APIConfig.get("API_BASE", "")
+API_KEY  = APIConfig.get("API_KEY", "")
+MODEL    = APIConfig.get("MODEL_NAME", "")
+
+# ========================= 数据结构
 @dataclass
 class Occurrence:
     path: str
@@ -98,7 +93,8 @@ class Occurrence:
 @dataclass
 class Neighbor:
     name: str
-    snippet: str = ""  # 例："entity_related|undirected" 或 "has_subordinate|out"
+    snippet: str = ""  # 如 "cooccur|undirected|w=..." 或 "rel|directed|type=part-of|src=core|dst=non-core"
+    type: str = ""     # 标准化关系名：cooccur / prerequisite / part-of / applies-to / example-of / synonym / contrasts-with / related
 
 @dataclass
 class EntityItem:
@@ -111,16 +107,25 @@ class EntityItem:
     role: str = ""  # "core" / "non-core"
     updated_description: str = ""  # 预留
 
-# =========================
-# 提示词 & 解析
-# =========================
-def build_system_prompt() -> str:
-    prompts = (AggrCfg.get("PROMPTS") or {})
-    return (prompts.get("system") or "").strip()
+# ========================= 工具：模板/解析/HTTP
+def _prompts_section() -> dict:
+    return PROMPTS or {}
+
+def build_system_prompt_role() -> str:
+    return (_prompts_section().get("system") or "").strip()
+
+def build_system_prompt_relation() -> str:
+    return (_prompts_section().get("relation_system") or "").strip()
 
 def _truncate(s: str, n: int) -> str:
     s = (s or "").strip()
     return (s[:n] + "…") if len(s) > n else s
+
+def _nb_list(ent: EntityItem, k=5) -> str:
+    xs = []
+    for nb in ent.neighbors[:k]:
+        xs.append(f"- {nb.name}｜{_truncate(nb.snippet, 60)}")
+    return "\n".join(xs) if xs else "(无)"
 
 def build_user_prompt_for_role(entity: EntityItem, section_summary: str) -> str:
     neighbors = entity.neighbors[:6]
@@ -129,12 +134,8 @@ def build_user_prompt_for_role(entity: EntityItem, section_summary: str) -> str:
     lines = []
     for nb in neighbors:
         sn = _truncate((nb.snippet or "").replace("\n", " "), 80)
-        if "|" in sn:
-            r, d, *_ = sn.split("|")
-            lines.append(f"- {nb.name}（关系:{r.strip()}, 方向:{d.strip()}）")
-        else:
-            lines.append(f"- {nb.name}：{sn}")
-
+        head = sn.split("|", 1)[0] if "|" in sn else "neighbor"
+        lines.append(f"- {nb.name}（{head}）")
     occ_str = "; ".join(o.path for o in occs) or "(无)"
     neigh_str = "\n".join(lines) if lines else "(无)"
 
@@ -148,6 +149,92 @@ def build_user_prompt_for_role(entity: EntityItem, section_summary: str) -> str:
         f"章节摘要（可选）：{_truncate(section_summary, 200)}\n"
     )
 
+# —— 关系标签集合 —— #
+REL_TYPES = {"prerequisite","part-of","applies-to","example-of","synonym","contrasts-with","related"}
+REL_PATTERN = re.compile(r"\b(prerequisite|part-of|applies-to|example-of|synonym|contrasts-with|related)\b", re.I)
+REL_LABEL_CHOICES = "prerequisite|part-of|applies-to|example-of|synonym|contrasts-with|related"
+
+# 关键修复②：关系模板安全渲染，避免 KeyError
+class _SafeDict(dict):
+    def __missing__(self, key):
+        # 未提供的占位符保持原样，避免 KeyError
+        return "{" + key + "}"
+
+def build_user_prompt_for_relation(core: EntityItem, child: EntityItem) -> str:
+    tpl = (_prompts_section().get("relation_user_template") or "").strip()
+    if not tpl:
+        return (
+            "只输出一行：在 {prerequisite|part-of|applies-to|example-of|synonym|contrasts-with|related} 中选择一个最贴切的关系类型。\n\n"
+            f"【Core】{core.name}（type={core.type}）\n描述：{_truncate(core.original, 200)}\n\n"
+            f"【Non-Core】{child.name}（type={child.type}）\n描述：{_truncate(child.original, 200)}\n"
+        )
+
+    # 兼容老模板：若发现单花括号的 7 类标签，把它替换成受控占位符
+    legacy = "{prerequisite|part-of|applies-to|example-of|synonym|contrasts-with|related}"
+    if legacy in tpl:
+        tpl = tpl.replace(legacy, "{label_choices}")
+
+    fields = _SafeDict({
+        "core_name": core.name,
+        "core_type": core.type,
+        "core_desc": _truncate(core.original, 260),
+        "core_neighbors": _nb_list(core, 5),
+        "child_name": child.name,
+        "child_type": child.type,
+        "child_desc": _truncate(child.original, 260),
+        "child_neighbors": _nb_list(child, 5),
+        "label_choices": REL_LABEL_CHOICES,  # 给模板使用
+    })
+
+    # 只格式化一次，且缺失字段不报错
+    return tpl.format_map(fields)
+
+def call_llm(system_prompt: str, user_prompt: str) -> Tuple[str, bool, str, int, bool]:
+    """OpenAI 兼容 /chat/completions；线程安全：每次请求独立调用 requests.post"""
+    if DRY_RUN:
+        return "", False, "dry_run_enabled", 0, True
+    if not API_BASE:
+        logger.warning("API_BASE 为空，跳过 LLM 调用。")
+        return "", False, "api_base_empty", 0, False
+
+    headers = {"Content-Type": "application/json"}
+    if API_KEY:
+        headers["Authorization"] = f"Bearer {API_KEY}"
+
+    payload = {
+        "model": MODEL,
+        "messages": [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ],
+        "temperature": TEMPERATURE,
+        "max_tokens": MAX_TOKENS,
+        "top_p": 1,
+        "frequency_penalty": 0,
+        "presence_penalty": 0,
+    }
+
+    last_err = ""
+    for attempt in range(1, RETRIES + 1):
+        try:
+            resp = requests.post(
+                f"{API_BASE}{CHAT_COMPLETIONS_PATH}",
+                headers=headers,
+                json=payload,
+                timeout=API_TIMEOUT,
+            )
+            resp.raise_for_status()
+            content = resp.json()["choices"][0]["message"]["content"].strip()
+            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
+            if content:
+                return content, True, "", attempt, False
+            last_err = "empty_content"
+        except Exception as e:
+            last_err = str(e)
+            time.sleep(2 ** attempt)
+    return "", False, last_err or "unknown_error", RETRIES, False
+
+# ========================= 角色判定（并发）
 _RE_CORE = r"(?:\bcore\b|核心)(?!\s*(?:词|概念|内容))"
 _RE_NONCORE = r"(?:\bnon[-\s]?core\b|非核心)"
 ROLE_PATTERN = re.compile(rf"{_RE_NONCORE}|{_RE_CORE}", flags=re.I)
@@ -156,7 +243,7 @@ def _parse_role(text: str) -> str:
     if not text:
         return ""
     t = text.replace("\r", "")
-    # 1) 先看第一行（严格只取首个非空行）
+    # 只看第一行
     for ln in t.splitlines():
         ln = ln.strip().strip(" :：，。;；\"'`*").lower()
         if not ln:
@@ -170,75 +257,15 @@ def _parse_role(text: str) -> str:
         if ln.startswith(("core", "核心")):
             return "core"
         break
-    # 2) 回退：全文正则（non-core 优先）
+    # 回退：全文正则
     matches = list(ROLE_PATTERN.finditer(t))
     if not matches:
         return ""
     last = matches[-1].group(0).lower().strip()
     return "non-core" if ("non" in last or "非核" in last) else "core"
 
-def call_llm(system_prompt: str, user_prompt: str):
-    """调用 OpenAI 兼容 /chat/completions；支持无鉴权本地网关"""
-    if bool(A("DRY_RUN", 0)):
-        return "", False, "dry_run_enabled", 0, True
-
-    api_base = APIConfig.get("API_BASE", "")
-    api_key  = APIConfig.get("API_KEY", "")
-    model    = APIConfig.get("MODEL_NAME", "")
-
-    if not api_base:
-        logger.warning("API_BASE 为空，跳过 LLM 调用。")
-        return "", False, "api_base_empty", 0, False
-
-    headers = {"Content-Type": "application/json"}
-    if api_key:
-        headers["Authorization"] = f"Bearer {api_key}"
-
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
-        "temperature": float(A("TEMPERATURE", 0.0)),
-        "max_tokens": int(A("MAX_TOKENS", 24)),
-        "top_p": 1,
-        "frequency_penalty": 0,
-        "presence_penalty": 0,
-    }
-
-    timeout   = int(A("API_TIMEOUT", 120))
-    retries   = int(A("RETRIES", 3))
-    path      = A("CHAT_COMPLETIONS_PATH", "/chat/completions")
-
-    last_err = ""
-    for attempt in range(1, retries + 1):
-        try:
-            resp = SESSION.post(
-                f"{api_base}{path}",
-                headers=headers,
-                json=payload,
-                timeout=timeout,
-            )
-            resp.raise_for_status()
-            content = resp.json()["choices"][0]["message"]["content"].strip()
-            content = re.sub(r"<think>.*?</think>", "", content, flags=re.DOTALL).strip()
-            if content:
-                return content, True, "", attempt, False
-            last_err = "empty_content"
-        except Exception as e:
-            last_err = str(e)
-            logger.warning(f"LLM 调用失败(第 {attempt}/{retries} 次)：{last_err}")
-            time.sleep(2 ** attempt)
-    return "", False, last_err or "unknown_error", retries, False
-
-def _fallback_role(entity: EntityItem) -> Tuple[str, str]:
-    score = len(entity.occurrences) + 0.5 * len(entity.neighbors)
-    role = "core" if score >= 4 else "non-core"
-    return role, f"fallback_by_heuristic: score={score:.1f} threshold=4 -> {role}"
-
 def judge_role(entity: EntityItem, section_summary: str) -> Tuple[str, dict]:
-    sys_p = build_system_prompt()
+    sys_p = build_system_prompt_role()
     usr_p = build_user_prompt_for_role(entity, section_summary)
     content, ok, err, attempts, dry = call_llm(sys_p, usr_p)
     parsed = _parse_role(content)
@@ -246,35 +273,29 @@ def judge_role(entity: EntityItem, section_summary: str) -> Tuple[str, dict]:
     note = ""
     if (not ok) or (parsed not in ("core", "non-core")):
         used_fallback = True
-        parsed, note = _fallback_role(entity)
-
-    diag = {
-        "ok": ok,
-        "attempts": attempts,
-        "used_fallback": used_fallback,
-        "note": note,
-        "raw": content,
-        "dry_run": dry,
-    }
+        weight = float(AggrCfg.get("FALLBACK", {}).get("neighbor_weight", 0.5))
+        threshold = float(AggrCfg.get("FALLBACK", {}).get("threshold", 4))
+        score = len(entity.occurrences) + weight * len(entity.neighbors)
+        parsed = "core" if score >= threshold else "non-core"
+        note = f"fallback_by_heuristic: score={score:.1f} threshold={threshold} -> {parsed}"
+    diag = {"ok": ok, "attempts": attempts, "used_fallback": used_fallback, "note": note, "raw": content, "dry_run": dry}
     return parsed, diag
 
-# =========================
-# 结构调整（横改纵 + 树约束）
-# =========================
-def _is_vertical(snippet: str) -> bool:
-    head = (snippet or "").split("|", 1)[0].strip().lower()
-    return head in {"has_subordinate", "has_parent", "has_entity", "has_subsection"}
-
+# ========================= 父选择 + 兜底
 def _is_horizontal(snippet: str) -> bool:
-    return not _is_vertical(snippet)
+    head = (snippet or "").split("|", 1)[0].strip().lower()
+    vertical_prefixes = [s.lower() for s in (AggrCfg.get("VERTICAL_REL_TYPES") or [])]
+    return head not in vertical_prefixes and head != "rel"  # cooccur 等视为横向
 
-def _mark_subordinate() -> str:
-    return "has_subordinate|out"   # core -> non-core
-
-def _mark_parent() -> str:
-    return "has_parent|in"         # non-core -> core（回指）
+def _cooccur_weight(s: str) -> int:
+    m = re.search(r"\bw=(\d+)\b", s or "")
+    try:
+        return int(m.group(1)) if m else 0
+    except Exception:
+        return 0
 
 def _build_noncore_parent_candidates(entities: Dict[str, EntityItem]) -> Dict[str, List[str]]:
+    """从 core 的横向邻居里挑 non-core 作为子候选"""
     cand: Dict[str, List[str]] = {}
     for core_name, core_ent in entities.items():
         if core_ent.role != "core":
@@ -287,67 +308,87 @@ def _build_noncore_parent_candidates(entities: Dict[str, EntityItem]) -> Dict[st
                 cand.setdefault(child.name, []).append(core_name)
     return cand
 
-def _choose_single_parent(candidates: Dict[str, List[str]]) -> Dict[str, str]:
-    chosen: Dict[str, str] = {}
-    for child, parents in candidates.items():
-        if parents:
-            chosen[child] = parents[0]
-    return chosen
-
-def _apply_edge_conversion(entities: Dict[str, EntityItem], chosen: Dict[str, str]) -> Tuple[int, int]:
-    added = 0
-    removed = 0
-    for child_name, parent_name in chosen.items():
-        core_ent = entities.get(parent_name)
-        child_ent = entities.get(child_name)
-        if not core_ent or not child_ent:
+def _fallback_pick_core_for_noncore(nc: EntityItem, entities: Dict[str, EntityItem]) -> Optional[str]:
+    """兜底：优先选择与 non-core 共现权重最高的 core；再同 section 交集；再任取 core。"""
+    best_core, best_w = None, -1
+    for nb in nc.neighbors:
+        ce = entities.get(nb.name)
+        if not ce or ce.role != "core":
             continue
+        w = _cooccur_weight(nb.snippet)
+        if w > best_w:
+            best_w, best_core = w, ce.name
+    if best_core:
+        return best_core
 
-        # 删除 core 与 child 的横向边
-        old = len(core_ent.neighbors)
-        core_ent.neighbors = [
-            n for n in core_ent.neighbors
-            if not (n.name == child_name and _is_horizontal(n.snippet))
-        ]
-        removed += (old - len(core_ent.neighbors))
+    nc_secs = {o.node_id for o in nc.occurrences}
+    if nc_secs:
+        score: Dict[str, int] = {}
+        for cname, cent in entities.items():
+            if cent.role != "core":
+                continue
+            c_secs = {o.node_id for o in cent.occurrences}
+            inter = len(nc_secs & c_secs)
+            if inter > 0:
+                score[cname] = inter
+        if score:
+            return max(score.items(), key=lambda kv: kv[1])[0]
 
-        old = len(child_ent.neighbors)
-        child_ent.neighbors = [
-            n for n in child_ent.neighbors
-            if not (n.name == parent_name and _is_horizontal(n.snippet))
-        ]
-        removed += (old - len(child_ent.neighbors))
+    for cname, cent in entities.items():
+        if cent.role == "core":
+            return cname
+    return None
 
-        # 添加纵边 core -> child
-        if not any(n.name == child_name and n.snippet.split("|", 1)[0] == "has_subordinate"
-                   for n in core_ent.neighbors):
-            core_ent.neighbors.append(Neighbor(name=child_name, snippet=_mark_subordinate()))
-            added += 1
+# ========================= 关系类型判定（并发）
+def _parse_relation_type(text: str) -> Optional[str]:
+    if not text:
+        return None
+    first = text.splitlines()[0].strip().lower()
+    first = re.sub(r"[\"'`*：:，,。;\\s]+$", "", first)
+    if first in REL_TYPES:
+        return first
+    m = REL_PATTERN.search(text)
+    if m:
+        cand = m.group(1).lower()
+        if cand in REL_TYPES:
+            return cand
+    return None
 
-        # 子节点回指
-        if not any(n.name == parent_name and n.snippet.split("|", 1)[0] == "has_parent"
-                   for n in child_ent.neighbors):
-            child_ent.neighbors.append(Neighbor(name=parent_name, snippet=_mark_parent()))
-            added += 1
+def classify_relation_type(core_ent: EntityItem, child_ent: EntityItem) -> str:
+    if DRY_RUN:
+        return "related"
+    sys_p = build_system_prompt_relation()
+    usr_p = build_user_prompt_for_relation(core_ent, child_ent)
+    content, ok, err, attempts, dry = call_llm(sys_p, usr_p)
+    rel = _parse_relation_type(content or "")
+    if rel in REL_TYPES:
+        # 小偏置：如果 core 是方法/函数/算法而 child 不是，优先 applies-to
+        if rel == "related" and any(k in core_ent.type.lower() for k in ["method","function","algorithm"]) and \
+           not any(k in child_ent.type.lower() for k in ["method","function","algorithm"]):
+            return "applies-to"
+        return rel
+    # 兜底
+    if core_ent.name == child_ent.name or (set(core_ent.alias) & set(child_ent.alias)):
+        return "synonym"
+    if any(k in core_ent.type.lower() for k in ["method","function","algorithm"]) and \
+       not any(k in child_ent.type.lower() for k in ["method","function","algorithm"]):
+        return "applies-to"
+    return "related"
 
-    # 保证每个 non-core 只有一个 has_parent（树约束）
-    for ent in entities.values():
-        if ent.role != "non-core":
-            continue
-        parents = [n for n in ent.neighbors if n.snippet.split("|", 1)[0] == "has_parent"]
-        if len(parents) <= 1:
-            continue
-        keep = chosen.get(ent.name)
-        ent.neighbors = [
-            n for n in ent.neighbors
-            if n.snippet.split("|", 1)[0] != "has_parent" or n.name == keep
-        ]
+def _mk_rel_snippet(rel_type: str, src_role="core", dst_role="non-core") -> str:
+    return f"rel|directed|type={rel_type}|src={src_role}|dst={dst_role}"
 
-    return added, removed
+# ========================= 类型补齐（写文件前）
+def _infer_type_from_snippet(sn: str) -> str:
+    if not sn:
+        return ""
+    head = sn.split("|", 1)[0].lower()
+    if head == "rel":
+        m = re.search(r"type=([a-z\\-]+)", sn, flags=re.I)
+        return (m.group(1).lower() if m else "related")
+    return head  # e.g. "cooccur", "has_subordinate" 等
 
-# =========================
-# 主流程
-# =========================
+# ========================= 主流程
 def run_aggr():
     # 路径检查
     if not CONV_IN_PATH.exists():
@@ -356,12 +397,16 @@ def run_aggr():
             f"请确认 HiddenKG/output/ 目录或在 aggr.yaml 中设置 CONV_IN_NAME。"
         )
 
-    with CONV_IN_PATH.open("r", encoding="utf-8") as f:
+    with CONV_IN_PATH.open("r", encoding=ENCODING) as f:
         raw = json.load(f)
 
-    # 转对象
+    # 转对象 + LIMIT
+    items = list(raw.items())
+    if LIMIT and LIMIT > 0:
+        items = items[:LIMIT]
+
     entities: Dict[str, EntityItem] = {}
-    for name, data in raw.items():
+    for name, data in items:
         entities[name] = EntityItem(
             name=name,
             alias=data.get("alias", []),
@@ -372,29 +417,101 @@ def run_aggr():
             neighbors=[Neighbor(**n) for n in data.get("neighbors", [])],
         )
 
-    section_summary = "章节内容摘要"  # 可替换/扩展
+    section_summary = "章节内容摘要"  # 如需，可从文件读取
 
-    # 阶段1：角色判定
-    logger.info("===== [Stage 1] 角色判定（第一行标签；短输出；失败启发式兜底）=====")
-    for name, ent in tqdm(entities.items(), desc="Assigning roles", ncols=100):
+    # 阶段1：角色判定（并发）
+    logger.info(f"===== [Stage 1] 角色判定（并发={WORKERS}）=====")
+    def _role_job(ent: EntityItem) -> Tuple[str, str, dict]:
         role, diag = judge_role(ent, section_summary)
-        ent.role = role
-        logger.info(
-            f"[aggr][role] entity={name} -> role={role} | "
-            f"llm_ok={diag['ok']}, attempts={diag['attempts']}, used_fallback={diag['used_fallback']}"
-        )
+        return ent.name, role, diag
 
-    # 阶段2：结构调整（横改纵 + 树约束）
-    logger.info("===== [Stage 2] 结构调整（横改纵 + 树约束）=====")
-    candidates = _build_noncore_parent_candidates(entities)
-    chosen = _choose_single_parent(candidates)
-    added, removed = _apply_edge_conversion(entities, chosen)
-    logger.info(f"[aggr][adjust] 候选父子对总数={sum(len(v) for v in candidates.values())}，选择父:子={len(chosen)} 对")
-    logger.info(f"[aggr][adjust] 新增纵边(含回指)={added}，删除横边={removed}")
+    futures = []
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for ent in entities.values():
+            futures.append(ex.submit(_role_job, ent))
+        for fut in tqdm(as_completed(futures), total=len(futures), ncols=PROGRESS_NCOLS, desc="Assign roles"):
+            try:
+                name, role, diag = fut.result()
+                entities[name].role = role
+                logger.info(f"[role] {name} -> {role} | ok={diag['ok']} attempts={diag['attempts']} fallback={diag['used_fallback']}")
+            except Exception as e:
+                logger.warning(f"[role] 任务失败：{e}")
+
+    # 阶段2：父选择（保证每个 non-core 至少有一个 core；TREE_ENFORCE 时单父）
+    logger.info("===== [Stage 2] 选择父 core 并保证覆盖所有 non-core =====")
+    candidates = _build_noncore_parent_candidates(entities)  # child -> [core...]
+    chosen: Dict[str, str] = {}
+    for child, parents in candidates.items():
+        if parents:
+            chosen[child] = parents[0]
+
+    for name, ent in entities.items():
+        if ent.role != "non-core":
+            continue
+        if name not in chosen:
+            alt = _fallback_pick_core_for_noncore(ent, entities)
+            if alt:
+                chosen[name] = alt
+
+    if TREE_ENFORCE:
+        # 当前实现就是单父，无需额外处理
+        pass
+
+    total_noncore = sum(1 for e in entities.values() if e.role == "non-core")
+    logger.info(f"non-core 总数={total_noncore}，已分配父={len(chosen)}")
+
+    # 阶段3：LLM 并发判定关系类型 + 写边（仅 core->non-core）
+    logger.info(f"===== [Stage 3] 关系类型判定（并发={WORKERS}）并写边 =====")
+    def _rel_job(child_name: str, parent_name: str) -> Tuple[str, str, str]:
+        core_ent  = entities[parent_name]
+        child_ent = entities[child_name]
+        rel_type = classify_relation_type(core_ent, child_ent)
+        return child_name, parent_name, rel_type
+
+    rel_futs = []
+    with ThreadPoolExecutor(max_workers=WORKERS) as ex:
+        for child_name, parent_name in chosen.items():
+            rel_futs.append(ex.submit(_rel_job, child_name, parent_name))
+        for fut in tqdm(as_completed(rel_futs), total=len(rel_futs), ncols=PROGRESS_NCOLS, desc="Classify relations"):
+            try:
+                child_name, parent_name, rel_type = fut.result()
+                core_ent  = entities[parent_name]
+                child_ent = entities[child_name]
+
+                # 移除两侧横向边
+                old_core = len(core_ent.neighbors)
+                core_ent.neighbors = [
+                    n for n in core_ent.neighbors
+                    if not (n.name == child_name and _is_horizontal(n.snippet))
+                ]
+                core_removed = old_core - len(core_ent.neighbors)
+
+                old_child = len(child_ent.neighbors)
+                child_ent.neighbors = [
+                    n for n in child_ent.neighbors
+                    if not (n.name == parent_name and _is_horizontal(n.snippet))
+                ]
+                child_removed = old_child - len(child_ent.neighbors)
+
+                # 添加 core -> non-core（不写回指），同时写 type
+                sn = _mk_rel_snippet(rel_type, "core", "non-core")
+                if not any(n.name == child_name and n.snippet == sn for n in core_ent.neighbors):
+                    core_ent.neighbors.append(Neighbor(name=child_name, snippet=sn, type=rel_type))
+
+                total_removed = max(core_removed, 0) + max(child_removed, 0)
+                logger.info(f"[edge] {parent_name} -> {child_name} ({rel_type}) | removed_horizontal={total_removed}")
+            except Exception as e:
+                logger.warning(f"[rel] 任务失败：{e}")
+
+    # —— 写出前统一补齐 neighbors[*].type —— #
+    for ent in entities.values():
+        for nb in ent.neighbors:
+            if not getattr(nb, "type", ""):
+                nb.type = _infer_type_from_snippet(nb.snippet)
 
     # 写出结果
     out = {}
-    for name, ent in tqdm(entities.items(), desc="Writing results", ncols=100):
+    for name, ent in tqdm(entities.items(), desc="Write results", ncols=PROGRESS_NCOLS):
         out[name] = {
             "name": ent.name,
             "alias": ent.alias,
@@ -407,14 +524,12 @@ def run_aggr():
         }
 
     AGGR_OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
-    with AGGR_OUT_PATH.open("w", encoding="utf-8") as f:
+    with AGGR_OUT_PATH.open("w", encoding=ENCODING) as f:
         json.dump(out, f, ensure_ascii=False, indent=2)
 
-    logger.info(f"[aggr] 完成，共处理 {len(out)} 个实体。输出文件：{AGGR_OUT_PATH}")
-    print(f"\n✅ Aggr 阶段完成，日志写入: {LOG_PATH}")
+    logger.info(f"完成，共处理 {len(out)} 个实体。输出文件：{AGGR_OUT_PATH}")
+    print(f"\n✅ Aggr 阶段完成（并发 {WORKERS}），日志：{LOG_PATH}")
 
-# =========================
-# CLI
-# =========================
+# ========================= CLI
 if __name__ == "__main__":
     run_aggr()
