@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Embedding.py
-使用抽象模型接口生成实体嵌入（支持批处理、AMP、L2归一化、PKL存储）
-"""
-
 import os
 import json
 import pickle
