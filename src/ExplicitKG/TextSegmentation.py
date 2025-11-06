@@ -235,7 +235,7 @@ def parse_docx(docx_path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
         if m and TextSegConfig['MAX_LEVEL'] >= 1:
             num_raw, title = m.group(1), clean_title(m.group(2))
             if HAS_LETTER_RE.search(title):
-                node = {"level": 1, "id": f"{cn2int(num_raw)}章", "title": title, "children": []}
+                node = {"level": 1, "id": f"第{cn2int(num_raw)}章", "title": title, "children": []}
                 toc.append(node)
                 cur_ch, cur_sec, cur_sub = node, None, None
             continue
