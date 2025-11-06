@@ -1,15 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Summarize.py
-Tree-KG 阶段一·步骤2：自底向上摘要（.docx 源）
-- 读取 toc_structure.json（含每个节点的 level、id、title、children）
-- 在 .docx 中定位每个节点的段落范围 para_start/para_end（稳健匹配）
-- 叶子节点：抽正文 -> LLM 并发摘要
-- 非叶节点：并发聚合子摘要 -> 生成上层摘要
-- 分层自底向上，同层并发；带重试与指数退避
-- 输出 toc_with_summaries.json
-"""
-
 import argparse
 import json
 import logging
