@@ -11,7 +11,7 @@ ExtractionConfig:
   REQUEST_TIMEOUT: 120
 
   # —— 并发与稳健性 —— #
-  MAX_WORKERS: 6
+  MAX_WORKERS: 8
   RETRY_ATTEMPTS: 3
   RETRY_BACKOFF_BASE: 1.8
 
@@ -21,40 +21,58 @@ ExtractionConfig:
 
   # —— 提示词模板 —— #
   ENTITY_PROMPT: |
-    Role: 你是课程知识图谱专家，擅长实体提取。
-    Task: 从以下摘要中提取教材课程强相关实体，输出JSON格式。
-    Constraints:
-      1. 实体为名词短语（如“库仑定律”）；
-      2. 同一实体的不同名称合并到“alias”（如“F=ma”→“牛顿第二定律”的alias）；
-      3. 实体类型需具体（如“物理定律”，而非“概念”）。
+    你是知识图谱专家，擅长提取高质量实体。
+    任务：从以下摘要中提取“实体”（如函数、算法、数学概念、语法结构等），并以 JSON 格式输出。
+    
+    要求：
+    1. 实体应为**具体名词短语或专业术语**。
+    2. 若同一概念存在不同表述或符号，请在 "alias" 中列出。
+    3. 所有实体必须能在摘要原文中找到对应表述，避免推测或扩写；
+    4. 输出必须是合法 JSON，仅包含实体内容，不得包含解释性文字。
+
     Input Summary: {section_summary}
-    Output Template:
+    输出格式严格如下（仅 JSON，无额外文字）：
     {{
       "entities": [
         {{
           "name": "实体名",
-          "alias": ["别名1"],
+          "alias": ["别名1", "别名2"],
           "type": "实体类型",
           "raw_content": "摘要中描述该实体的原文"
         }}
       ]
     }}
-    Output must be valid JSON only, without explanation.
 
   RELATION_PROMPT: |
-    Role: 你是课程教学领域专家，擅长判断实体间关系。
-    Task: 基于摘要和实体列表，判断实体间是否存在关系，输出JSON。
+    你是知识图谱专家。
+    任务：基于摘要与已识别实体列表，判断各实体之间是否存在语义关系，并以 JSON 格式输出。
+
+    可选关系类型（英文标签，与系统保持一致）：
+    - prerequisite：先修/前置；掌握 A 是理解 B 的必要条件。
+    - part-of：组成/包含；A 是 B 的组成部分或子概念。
+    - applies-to：应用；A（方法/函数/算法）用于 B（任务/对象/场景）。
+    - example-of：实例；A 是 B 的实例或典型代表（方向 A→B）。
+    - synonym：同义；A 与 B 含义相同或几乎等价。
+    - contrasts-with：对比；A 与 B 在原理或用途上形成对照。
+    - related：相关；弱相关或无明显层级关系（兜底类型）。
+
+    判断规则：
+    1. 每对实体仅选择一种最强关系类型；若无明显关系则忽略；
+    2. 关系说明应简洁明了，不超过一句话；
+    3. 输出必须是合法 JSON，不得包含多余文字或解释。
+
     Input:
       摘要：{section_summary}
       实体列表：{entity_list}
-    Output Template:
+
+    输出格式严格如下（仅 JSON，无额外文字）：
     {{
       "relations": [
         {{
           "source": "源实体名",
           "target": "目标实体名",
-          "type": "关系类型（如“定义”）",
-          "description": "关系说明"
+          "type": "prerequisite|part-of|applies-to|example-of|synonym|contrasts-with|related",
+          "description": "一句话说明两实体的关系"
         }}
       ]
     }}
