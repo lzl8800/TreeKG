@@ -5,7 +5,6 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
-
 import yaml
 from docx import Document
 from docx.text.paragraph import Paragraph
@@ -13,11 +12,9 @@ from tqdm import tqdm
 
 # ===== 配置加载（相对 config.yaml 解析 include）=====
 
-
 def _load_yaml(p: Path) -> dict:
     with p.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
-
 
 def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
     merged: Dict[str, Any] = {}
@@ -33,7 +30,6 @@ def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
             raise FileNotFoundError(f"找不到包含文件：{inc_path}")
         merged.update(_load_yaml(inc_path))
     return merged
-
 
 # 脚本所在目录：src/ExplicitKG
 script_dir = Path(__file__).resolve().parent
