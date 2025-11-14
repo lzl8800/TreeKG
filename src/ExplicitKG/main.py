@@ -40,7 +40,7 @@ def run_script(script_name: str):
 
 def main():
     # 设置工作路径（如果需要）
-    base_path = r'E:\python\TreeKG\src'
+    base_path = r'../../src'
     os.chdir(base_path)
 
     # 按照要求的顺序依次执行各个文件
