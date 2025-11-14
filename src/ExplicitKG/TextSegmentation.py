@@ -57,9 +57,7 @@ _handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
 logger.addHandler(_handler)
 logger.setLevel(logging.INFO)
 
-# =========================
-# 正则与工具
-# =========================
+#  ============= 正则与工具 =============
 
 HAS_LETTER_RE = re.compile(r"[\u4e00-\u9fa5A-Za-z]")
 
@@ -189,10 +187,7 @@ def _parse_chapter_no(ch_id: str) -> int:
     return cn2int(s)
 
 
-# =========================
-# 解析主逻辑
-# =========================
-
+# ============= 解析主逻辑 =============
 
 def parse_docx(docx_path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
     doc = Document(str(docx_path))
@@ -350,11 +345,7 @@ def parse_docx(docx_path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
 
     return toc, warnings
 
-
-# =========================
-# I/O & CLI
-# =========================
-
+#  ============= I/O & CLI =============
 
 def save_toc(toc: List[Dict[str, Any]], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
