@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 # 项目 src 目录
-BASE_PATH = Path(r"E:\python\TreeKG\src").resolve()
+BASE_PATH = Path(r"../../src").resolve()
 
 SCRIPTS = [
     "HiddenKG/Conv.py",      # 第一步
