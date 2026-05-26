@@ -1,60 +1,75 @@
+import logging
+import os
 import subprocess
 import sys
-import os
 from pathlib import Path
+
+from log_utils import setup_stage_logger
+
+
+BASE_PATH = Path(__file__).resolve().parents[1]
+LOG_OUTPUT_DIR = BASE_PATH / "output" / "01_explicit_kg"
+logger = setup_stage_logger("explicit_main", LOG_OUTPUT_DIR, console_level=logging.INFO)
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 
 def run_script(script_name: str):
-    """运行指定的Python脚本，并实时打印输出（含进度条）"""
     try:
-        # 关键修改1：合并stdout和stderr，禁用Python子进程的输出缓冲
+        logger.info("Starting script: %s", script_name)
         env = os.environ.copy()
-        env['PYTHONUNBUFFERED'] = '1'  # 禁用输出缓冲，确保进度条实时刷新
+        env["PYTHONUNBUFFERED"] = "1"
+        env["PYTHONIOENCODING"] = "utf-8"
 
         process = subprocess.Popen(
-            [sys.executable, script_name],
+            [sys.executable, str(BASE_PATH / script_name)],
             stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,  # 合并stderr到stdout，进度条会在这里输出
+            stderr=subprocess.STDOUT,
             text=True,
-            encoding='utf-8',
-            bufsize=0,  # 0 = 无缓冲（比bufsize=1更彻底）
-            env=env,  # 传递禁用缓冲的环境变量
-            universal_newlines=True
+            encoding="utf-8",
+            errors="replace",
+            bufsize=0,
+            env=env,
+            universal_newlines=True,
+            cwd=str(BASE_PATH),
         )
 
-        # 关键修改2：用iter循环读取，提升实时性
-        for line in iter(process.stdout.readline, ''):
-            print(line, end='', flush=True)  # flush=True 确保主进程即时打印
+        for line in iter(process.stdout.readline, ""):
+            print(line, end="", flush=True)
+            logger.info(line.rstrip())
 
-        # 等待脚本执行完成
         process.wait()
-
         if process.returncode != 0:
+            logger.error("Script failed: %s, returncode=%s", script_name, process.returncode)
             print(f"运行 {script_name} 时发生错误")
             sys.exit(1)
 
+        logger.info("Finished script: %s", script_name)
         print(f"成功运行 {script_name}\n")
-    except Exception as e:
-        print(f"运行 {script_name} 时发生错误: {e}")
+    except Exception:
+        logger.exception("Script raised exception: %s", script_name)
+        print(f"运行 {script_name} 时发生错误")
         sys.exit(1)
 
-def main():
-    # 设置工作路径（如果需要）
-    base_path = r'../../src'
-    os.chdir(base_path)
 
-    # 按照要求的顺序依次执行各个文件
+def main():
     scripts = [
-        "ExplicitKG/TextSegmentation.py",  # 第一步
-        "ExplicitKG/Summarize.py",  # 第二步
-        "ExplicitKG/Extraction.py",  # 第三步
-        "ExplicitKG/toc_graph.py"  # 第五步
+        "ExplicitKG/TextSegmentation.py",
+        "ExplicitKG/Summarize.py",
+        "ExplicitKG/Extraction.py",
+        "ExplicitKG/toc_graph.py",
     ]
 
-    # 逐个执行脚本
+    print(f"工作目录：{BASE_PATH}")
+    logger.info("ExplicitKG pipeline started. cwd=%s, python=%s", BASE_PATH, sys.executable)
     for script in scripts:
         print(f"正在执行 {script}...")
         run_script(script)
+    logger.info("ExplicitKG pipeline finished. log=%s", logger.log_path)
+
 
 if __name__ == "__main__":
     main()
