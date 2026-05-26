@@ -1,3 +1,15 @@
+# -*- coding: utf-8 -*-
+"""
+Summarize.py
+Tree-KG 阶段一·步骤2：自底向上摘要（.docx 源）
+- 读取 toc_structure.json（含每个节点的 level、id、title、children）
+- 在 .docx 中定位每个节点的段落范围 para_start/para_end（稳健匹配）
+- 叶子节点：抽正文 -> LLM 并发摘要
+- 非叶节点：并发聚合子摘要 -> 生成上层摘要
+- 分层自底向上，同层并发；带重试与指数退避
+- 输出 toc_with_summaries.json
+"""
+
 import argparse
 import json
 import logging
@@ -11,6 +23,7 @@ import yaml
 from docx import Document
 from tqdm import tqdm
 import openai
+from log_utils import setup_stage_logger
 
 # ===== 配置加载（相对 config.yaml 解析 include） =====
 def _load_yaml(p: Path) -> dict:
@@ -34,6 +47,9 @@ def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
 
 # 脚本所在目录：src/ExplicitKG
 script_dir = Path(__file__).resolve().parent
+src_dir = script_dir.parent
+layer_output_dir = src_dir / "output" / "01_explicit_kg"
+legacy_output_dir = script_dir / "output"
 
 # 主配置：src/ExplicitKG/config/config.yaml
 config_file = script_dir / "config" / "config.yaml"
@@ -53,11 +69,7 @@ openai.api_base = APIConfig.get("API_BASE", "")
 openai.api_key = APIConfig.get("API_KEY", "")
 
 # ===== 日志 =====
-logger = logging.getLogger("Summarize")
-_handler = logging.StreamHandler()
-_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-logger.addHandler(_handler)
-logger.setLevel(logging.INFO)
+logger = setup_stage_logger("summarize", layer_output_dir, console_level=logging.INFO)
 
 
 # ===== OpenAI 兼容接口 =====
@@ -65,10 +77,12 @@ openai.api_base = APIConfig["API_BASE"]
 openai.api_key = APIConfig["API_KEY"]
 
 # 获取配置文件路径，自动拼接路径
-output_dir = script_dir / "output"
+output_dir = layer_output_dir
 
 # 获取 .docx 和 toc 文件路径
 docx_path = output_dir / SummarizeConfig['DOCX_NAME']
+if not docx_path.exists():
+    docx_path = legacy_output_dir / SummarizeConfig['DOCX_NAME']
 toc_json_path = output_dir / SummarizeConfig['TOC_NAME']
 out_json_path = output_dir / SummarizeConfig['OUT_NAME']
 
@@ -165,6 +179,7 @@ def split_chunks(text: str, max_len: int, overlap: int) -> List[str]:
 
 # ===== LLM 请求（重试+退避）=====
 def _chat_once(prompt: str) -> str:
+    logger.debug("Calling LLM for summary. prompt_chars=%s, model=%s", len(prompt), APIConfig["MODEL_NAME"])
     resp = openai.ChatCompletion.create(
         model=APIConfig["MODEL_NAME"],
         messages=[{"role": "user", "content": prompt}],
@@ -174,7 +189,9 @@ def _chat_once(prompt: str) -> str:
     text = resp["choices"][0]["message"]["content"].strip()
     # 去除 <think>...</think> 区块
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    return text.strip()
+    cleaned = text.strip()
+    logger.debug("LLM summary response received. response_chars=%s", len(cleaned))
+    return cleaned
 
 
 def chat_with_retry(prompt: str) -> str:
@@ -185,6 +202,8 @@ def chat_with_retry(prompt: str) -> str:
         except Exception as e:
             last_err = e
             backoff = (SummarizeConfig["RETRY_BACKOFF_BASE"] ** k)
+            logger.warning("Summary LLM call failed. attempt=%s/%s, backoff=%s, error=%s",
+                           k + 1, SummarizeConfig["RETRY_ATTEMPTS"], backoff, e)
             time.sleep(backoff)
     raise RuntimeError(f"LLM 请求失败（已重试 {SummarizeConfig['RETRY_ATTEMPTS']} 次）: {last_err}")
 
@@ -249,6 +268,7 @@ def nodes_at_depth(toc: List[Dict[str, Any]], d: int) -> List[Dict[str, Any]]:
     return out
 
 def run() -> None:
+    logger.info("Summarize started. docx=%s, toc=%s, out=%s", docx_path.resolve(), toc_json_path.resolve(), out_json_path.resolve())
     if not docx_path.exists():
         raise FileNotFoundError(f"未找到 .docx：{docx_path}")
     if not toc_json_path.exists():
@@ -256,12 +276,15 @@ def run() -> None:
 
     with toc_json_path.open("r", encoding=SummarizeConfig["ENCODING"]) as f:
         toc: List[Dict[str, Any]] = json.load(f)
+    logger.info("Loaded TOC roots=%s", len(toc))
 
     paras = load_docx_paragraphs(docx_path)
+    logger.info("Loaded docx paragraphs=%s", len(paras))
     attach_para_ranges(toc, paras)
 
     # 打深度标签
     max_d = compute_depths(toc)
+    logger.info("Computed TOC max_depth=%s", max_d)
 
     # 统计总节点数用于进度条
     total_nodes = len(flatten_nodes(toc))
@@ -280,6 +303,7 @@ def run() -> None:
     with ThreadPoolExecutor(max_workers=SummarizeConfig["MAX_WORKERS"]) as pool:
         for d in range(max_d, 0, -1):
             layer_nodes = nodes_at_depth(toc, d)
+            logger.info("Summarizing depth=%s, nodes=%s", d, len(layer_nodes))
             # 提交本层所有节点任务
             futures = [pool.submit(summarize_node, n) for n in layer_nodes]
             # 等待本层全部完成，再进入上一层（保证父节点读取到子摘要）
@@ -294,6 +318,7 @@ def run() -> None:
 
     logger.info(f"✅ 已写出：{out_json_path.resolve()}")
     logger.info("每个节点包含：id/title/children/para_start/para_end/summary")
+    logger.info("Summarize log: %s", logger.log_path)
 
 def main():
     ap = argparse.ArgumentParser(description="自底向上并发摘要（.docx 源）")
@@ -301,7 +326,11 @@ def main():
                     choices=["DEBUG", "INFO", "WARNING", "ERROR"])
     args = ap.parse_args()
     logger.setLevel(getattr(logging, args.loglevel))
-    run()
+    try:
+        run()
+    except Exception:
+        logger.exception("Summarize failed.")
+        raise
 
 if __name__ == "__main__":
     main()
