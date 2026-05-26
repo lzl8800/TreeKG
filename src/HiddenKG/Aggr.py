@@ -1,4 +1,22 @@
+# -*- coding: utf-8 -*-
+"""
+HiddenKG 第一步：实体聚合（Aggr）
+- 加载 HiddenKG/config/config.yaml 与 include_files
+- 只使用 YAML 中的名字字段来拼路径：
+    CONV_IN_NAME -> HiddenKG/output/CONV_IN_NAME
+    OUT_NAME     -> HiddenKG/output/OUT_NAME
+    LOG_NAME     -> HiddenKG/logs/LOG_NAME
+- 功能：
+  1) 角色判定（core / non-core）—— 并发 LLM 调用 + 启发式兜底
+  2) 为每个 non-core 选择一个 core 父（候选 + 兜底），可强制单父（TREE_ENFORCE=1）
+  3) core -> non-core 的关系类型由 LLM 并发判定（7 选 1）
+  4) 只写 core -> non-core，不写回指
+  5) 邻接项写入时：snippet 与 type 同时写；旧共现项会补齐 type=cooccur
+  6) 进度条宽度、并发线程数等从配置读取
+"""
+
 from __future__ import annotations
+
 import json
 import time
 import logging
@@ -43,8 +61,8 @@ AggrCfg   = config.get("AggrConfig", {})
 PROMPTS   = (config.get("PROMPTS") or AggrCfg.get("PROMPTS") or {})
 
 # ========================= 路径拼接
-OUTPUT_DIR = SCRIPT_DIR / "output"
-LOGS_DIR   = SCRIPT_DIR / "logs"
+OUTPUT_DIR = SCRIPT_DIR.parent / "output" / "02_hidden_kg"
+LOGS_DIR   = OUTPUT_DIR / "logs"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 LOGS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -390,6 +408,7 @@ def _infer_type_from_snippet(sn: str) -> str:
 
 # ========================= 主流程
 def run_aggr():
+    logger.info("Aggr started. input=%s, output=%s, log=%s", CONV_IN_PATH.resolve(), AGGR_OUT_PATH.resolve(), LOG_PATH.resolve())
     # 路径检查
     if not CONV_IN_PATH.exists():
         raise FileNotFoundError(
@@ -528,8 +547,13 @@ def run_aggr():
         json.dump(out, f, ensure_ascii=False, indent=2)
 
     logger.info(f"完成，共处理 {len(out)} 个实体。输出文件：{AGGR_OUT_PATH}")
+    logger.info("Aggr log: %s", LOG_PATH)
     print(f"\n✅ Aggr 阶段完成（并发 {WORKERS}），日志：{LOG_PATH}")
 
 # ========================= CLI
 if __name__ == "__main__":
-    run_aggr()
+    try:
+        run_aggr()
+    except Exception:
+        logger.exception("Aggr failed.")
+        raise
