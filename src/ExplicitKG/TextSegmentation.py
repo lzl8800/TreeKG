@@ -5,16 +5,20 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
+
 import yaml
 from docx import Document
 from docx.text.paragraph import Paragraph
 from tqdm import tqdm
+from log_utils import setup_stage_logger
 
 # ===== 配置加载（相对 config.yaml 解析 include）=====
+
 
 def _load_yaml(p: Path) -> dict:
     with p.open("r", encoding="utf-8") as f:
         return yaml.safe_load(f) or {}
+
 
 def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
     merged: Dict[str, Any] = {}
@@ -31,8 +35,12 @@ def _load_additional_configs(include_files: List[str], base_dir: Path) -> dict:
         merged.update(_load_yaml(inc_path))
     return merged
 
+
 # 脚本所在目录：src/ExplicitKG
 script_dir = Path(__file__).resolve().parent
+src_dir = script_dir.parent
+layer_output_dir = src_dir / "output" / "01_explicit_kg"
+legacy_output_dir = script_dir / "output"
 
 # 主配置：src/ExplicitKG/config/config.yaml
 config_file = script_dir / "config" / "config.yaml"
@@ -47,13 +55,11 @@ config.update(additional)
 TextSegConfig: Dict[str, Any] = config["TextSegConfig"]
 
 # ===== 日志 =====
-logger = logging.getLogger("TextSegmentation")
-_handler = logging.StreamHandler(sys.stdout)  # 输出到标准输出
-_handler.setFormatter(logging.Formatter("[%(levelname)s] %(message)s"))
-logger.addHandler(_handler)
-logger.setLevel(logging.INFO)
+logger = setup_stage_logger("text_segmentation", layer_output_dir, console_level=logging.INFO)
 
-#  ============= 正则与工具 =============
+# =========================
+# 正则与工具
+# =========================
 
 HAS_LETTER_RE = re.compile(r"[\u4e00-\u9fa5A-Za-z]")
 
@@ -183,7 +189,10 @@ def _parse_chapter_no(ch_id: str) -> int:
     return cn2int(s)
 
 
-# ============= 解析主逻辑 =============
+# =========================
+# 解析主逻辑
+# =========================
+
 
 def parse_docx(docx_path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
     doc = Document(str(docx_path))
@@ -341,12 +350,17 @@ def parse_docx(docx_path: Path) -> Tuple[List[Dict[str, Any]], List[str]]:
 
     return toc, warnings
 
-#  ============= I/O & CLI =============
+
+# =========================
+# I/O & CLI
+# =========================
+
 
 def save_toc(toc: List[Dict[str, Any]], out_path: Path) -> None:
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with out_path.open("w", encoding=TextSegConfig["ENCODING"]) as f:
         json.dump(toc, f, ensure_ascii=False, indent=2)
+    logger.debug("Saved TOC json: %s, root_count=%s", out_path.resolve(), len(toc))
 
 
 def save_warnings(warnings: List[str], warn_path: Path) -> None:
@@ -356,12 +370,15 @@ def save_warnings(warnings: List[str], warn_path: Path) -> None:
     with warn_path.open("w", encoding=TextSegConfig["ENCODING"]) as f:
         for w in warnings:
             f.write(w + "\n")
+    logger.debug("Saved warnings: %s, count=%s", warn_path.resolve(), len(warnings))
 
 
 def main():
-    docx_path = script_dir / "output" / TextSegConfig["DOCX_NAME"]
-    toc_path = script_dir / "output" / TextSegConfig["TOC_NAME"]
-    warn_path = script_dir / "output" / TextSegConfig["WARN_NAME"]
+    docx_path = layer_output_dir / TextSegConfig["DOCX_NAME"]
+    if not docx_path.exists():
+        docx_path = legacy_output_dir / TextSegConfig["DOCX_NAME"]
+    toc_path = layer_output_dir / TextSegConfig["TOC_NAME"]
+    warn_path = layer_output_dir / TextSegConfig["WARN_NAME"]
     parser = argparse.ArgumentParser(description="解析 Word 目录结构（章-节-小节-知识点）")
     parser.add_argument(
         "--docx",
@@ -398,10 +415,15 @@ def main():
     out_path = Path(args.out)
     warn_path = Path(args.warn)
 
-    logger.info(f"开始解析：{in_path}")
-    toc, warnings = parse_docx(in_path)
-    save_toc(toc, out_path)
-    save_warnings(warnings, warn_path)
+    logger.info("Start parsing docx: %s", in_path.resolve())
+    try:
+        toc, warnings = parse_docx(in_path)
+        logger.info("Parsed TOC roots=%s, warnings=%s", len(toc), len(warnings))
+        save_toc(toc, out_path)
+        save_warnings(warnings, warn_path)
+    except Exception:
+        logger.exception("Text segmentation failed.")
+        raise
 
     logger.info(f"✅ 完成文本分割：{out_path.resolve()}")
     if toc:
@@ -413,6 +435,7 @@ def main():
             logger.warning("  - " + w)
         if n > TextSegConfig["WARNINGS_PRINT_TOP"]:
             logger.warning("  ...（其余已省略；完整内容见文件：%s）", warn_path.name)
+    logger.info("Text segmentation log: %s", logger.log_path)
 
 
 if __name__ == "__main__":
