@@ -1,23 +1,28 @@
+# -*- coding: utf-8 -*-
 from __future__ import annotations
 from pathlib import Path
 from typing import Dict, List, Any
 import json
+import logging
 from collections import Counter
 import re
+from log_utils import setup_stage_logger
 
 # === 目录锚点 ===
 HERE = Path(__file__).resolve().parent      # .../src/HiddenKG
 SRC  = HERE.parent                           # .../src
 ROOT = SRC.parent                            # .../TreeKG (如需)
 
-# === 固定输入/输出目录（都在 src/*/output 下） ===
-EXPLICIT_OUT = SRC / "ExplicitKG" / "output"        # 输入：toc_graph.json
-HIDDEN_OUT   = HERE / "output"                      # 输入：dedup_result.json / pred_result.json；输出：final_kg.json
+# === 固定输入/输出目录（统一在 src/output 下，按两层拆分） ===
+OUTPUT_ROOT = SRC / "output"
+EXPLICIT_OUT = OUTPUT_ROOT / "01_explicit_kg"
+HIDDEN_OUT   = OUTPUT_ROOT / "02_hidden_kg"
+logger = setup_stage_logger("final_kg", HIDDEN_OUT, console_level=logging.INFO)
 
-DEDUP_FILE = HIDDEN_OUT / "dedup_result.json"
-PRED_FILE  = HIDDEN_OUT / "pred_result.json"
-TOC_FILE   = EXPLICIT_OUT / "toc_graph.json"
-FINAL_FILE = HIDDEN_OUT / "final_kg.json"           # 输出：src/HiddenKG/output/final_kg.json
+DEDUP_FILE = HIDDEN_OUT / "04_dedup_result.json"
+PRED_FILE  = HIDDEN_OUT / "05_pred_result.json"
+TOC_FILE   = EXPLICIT_OUT / "04_toc_graph.json"
+FINAL_FILE = HIDDEN_OUT / "06_final_kg.json"
 
 REL7 = {
     "prerequisite","part-of","applies-to","example-of","synonym","contrasts-with","related"
@@ -25,6 +30,7 @@ REL7 = {
 _re_type = re.compile(r"type=([a-z\-]+)", re.I)
 
 def read_json(p: Path) -> Any:
+    logger.debug("Reading json: %s", p.resolve())
     with p.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -65,10 +71,14 @@ def _infer_nb_rel_type(nb: dict) -> str | None:
     return None
 
 def assemble():
+    logger.info("FinalKG assemble started. dedup=%s, pred=%s, toc=%s, output=%s",
+                DEDUP_FILE.resolve(), PRED_FILE.resolve(), TOC_FILE.resolve(), FINAL_FILE.resolve())
     # 输入检查（都在 src/*/output 下）
     if not DEDUP_FILE.exists():
+        logger.error("Missing dedup file: %s", DEDUP_FILE.resolve())
         raise FileNotFoundError(f"missing {DEDUP_FILE}")
     if not TOC_FILE.exists():
+        logger.error("Missing toc graph file: %s", TOC_FILE.resolve())
         raise FileNotFoundError(f"missing {TOC_FILE}")
 
     entities = load_entities_map(DEDUP_FILE)
@@ -76,6 +86,8 @@ def assemble():
     toc_nodes = toc.get("nodes", []) or []
     toc_edges = toc.get("edges", []) or []
     pred_edges = read_json(PRED_FILE) if PRED_FILE.exists() else []
+    logger.info("Loaded inputs. entities=%s, toc_nodes=%s, toc_edges=%s, pred_edges=%s",
+                len(entities), len(toc_nodes), len(toc_edges), len(pred_edges or []))
 
     toc_title_index = build_toc_index(toc_nodes)
 
@@ -179,6 +191,7 @@ def assemble():
     FINAL_FILE.parent.mkdir(parents=True, exist_ok=True)
     with FINAL_FILE.open("w", encoding="utf-8") as f:
         json.dump(kg, f, ensure_ascii=False, indent=2)
+    logger.info("FinalKG saved. nodes=%s, edges=%s, output=%s", len(kg["nodes"]), len(kg["edges"]), FINAL_FILE.resolve())
 
     # 统计
     print(f"✅ 输出: {FINAL_FILE.resolve()}")
@@ -190,6 +203,12 @@ def assemble():
     by_type = Counter(e["type"] for e in edges)
     for k, v in by_type.items():
         print(f"  · {k}: {v}")
+        logger.info("Edge type count. type=%s, count=%s", k, v)
+    logger.info("FinalKG log: %s", logger.log_path)
 
 if __name__ == "__main__":
-    assemble()
+    try:
+        assemble()
+    except Exception:
+        logger.exception("FinalKG assemble failed.")
+        raise
