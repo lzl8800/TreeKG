@@ -3,12 +3,14 @@ import json
 import re
 import threading
 import time
+import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 import yaml
 import openai
 from typing import Dict, List, Any, Optional
 from tqdm import tqdm
+from log_utils import setup_stage_logger
 
 # -------- 基础工具 --------
 def load_yaml(p: Path) -> dict:
@@ -36,8 +38,11 @@ def load_additional_configs(include_files: list, base_dir: Path) -> dict:
 
 # -------- 先确定脚本 & 配置路径 --------
 script_dir = Path(__file__).resolve().parent
+src_dir = script_dir.parent
+layer_output_dir = src_dir / "output" / "01_explicit_kg"
 config_file = script_dir / "config" / "config.yaml"
 config_dir = config_file.parent  # = ExplicitKG/config
+logger = setup_stage_logger("extraction", layer_output_dir, console_level=logging.INFO)
 
 # -------- 加载主配置 + 合并 include --------
 config = load_yaml(config_file)
@@ -95,6 +100,7 @@ def _chat_once(prompt: str) -> str:
     _rate_limit_block()  # QPS 控制（可关）
     if config['ExtractionConfig']['EXTRA_THROTTLE_SEC'] > 0:  # 额外固定节流（可关）
         time.sleep(config['ExtractionConfig']['EXTRA_THROTTLE_SEC'])
+    logger.debug("Calling LLM for extraction. prompt_chars=%s, model=%s", len(prompt), MODEL_NAME)
     resp = openai.ChatCompletion.create(
         model=MODEL_NAME,
         messages=[{"role": "user", "content": prompt}],
@@ -104,7 +110,9 @@ def _chat_once(prompt: str) -> str:
     text = resp["choices"][0]["message"]["content"].strip()
     # ✅ 去除 <think> ... </think> 的部分
     text = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
-    return text.strip()
+    cleaned = text.strip()
+    logger.debug("Extraction LLM response received. response_chars=%s", len(cleaned))
+    return cleaned
 
 def chat_with_retry(prompt: str) -> str:
     last_err: Optional[Exception] = None
@@ -114,14 +122,20 @@ def chat_with_retry(prompt: str) -> str:
         except Exception as e:
             last_err = e
             backoff = (config['ExtractionConfig']['RETRY_BACKOFF_BASE'] ** k)
+            logger.warning("Extraction LLM call failed. attempt=%s/%s, backoff=%s, error=%s",
+                           k + 1, config['ExtractionConfig']['RETRY_ATTEMPTS'], backoff, e)
             time.sleep(backoff)
     raise RuntimeError(f"LLM 请求失败（已重试 {config['ExtractionConfig']['RETRY_ATTEMPTS']} 次）: {last_err}")
 
 def call_openai_json(prompt: str) -> Dict:
     try:
         content = chat_with_retry(prompt)
-        return safe_json_loads(content)
+        data = safe_json_loads(content)
+        if not data:
+            logger.warning("Extraction LLM returned non-json or empty json. response_prefix=%s", content[:200])
+        return data
     except Exception:
+        logger.exception("Extraction JSON LLM call failed.")
         return {}
 
 # ===== 抽取逻辑 =====
@@ -210,6 +224,7 @@ def collect_subsections(toc: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 # ===== 主流程（并发）=====
 def run(max_workers: int):
+    logger.info("Extraction started. workers=%s", max_workers)
     # 获取 src/ExplicitKG 目录
     script_dir = Path(__file__).resolve().parent
 
@@ -218,24 +233,28 @@ def run(max_workers: int):
     out_json_filename = config['ExtractionConfig']['OUT_NAME']
 
     # 构建输入和输出路径
-    in_json = script_dir / "output" / in_json_filename
-    out_json = script_dir / "output" / out_json_filename
+    in_json = layer_output_dir / in_json_filename
+    out_json = layer_output_dir / out_json_filename
 
     # 检查输入文件是否存在
     if not in_json.exists():
         raise FileNotFoundError(f"未找到输入：{in_json}")
+    logger.info("Extraction input=%s, output=%s", in_json.resolve(), out_json.resolve())
 
     # 读取输入文件并进行处理
     with in_json.open("r", encoding=config['ExtractionConfig']['ENCODING']) as f:
         toc: List[Dict[str, Any]] = json.load(f)
+    logger.info("Loaded summarized TOC roots=%s", len(toc))
 
     subsections = collect_subsections(toc)
     total = len(subsections)
+    logger.info("Collected subsections for extraction=%s", total)
 
     if total == 0:
         # 直接输出空结构或原结构
         with out_json.open("w", encoding=config['ExtractionConfig']['ENCODING']) as f:
             json.dump(toc, f, ensure_ascii=False, indent=2)
+        logger.info("No subsections found. Wrote passthrough output=%s", out_json.resolve())
         print(f"✅ 无需抽取（没有找到含摘要的小节）。已写出：{out_json.resolve()}")
         return
 
@@ -260,6 +279,10 @@ def run(max_workers: int):
     with out_json.open("w", encoding=config['ExtractionConfig']['ENCODING']) as f:
         json.dump(toc, f, ensure_ascii=False, indent=2)
 
+    entity_total = sum(len(sub.get("entities", []) or []) for sub in subsections)
+    relation_total = sum(len(sub.get("relations", []) or []) for sub in subsections)
+    logger.info("Extraction finished. entities=%s, relations=%s, output=%s", entity_total, relation_total, out_json.resolve())
+    logger.info("Extraction log: %s", logger.log_path)
     print(f"\n✅ 实体与关系提取完成：{out_json.resolve()}")
 
 def main():
@@ -268,7 +291,11 @@ def main():
                     help="并发线程数（默认见配置 EXT_MAX_WORKERS）")
     args = ap.parse_args()
 
-    run(max_workers=args.workers)
+    try:
+        run(max_workers=args.workers)
+    except Exception:
+        logger.exception("Extraction failed.")
+        raise
 
 if __name__ == "__main__":
     main()
