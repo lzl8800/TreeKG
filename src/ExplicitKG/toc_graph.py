@@ -1,11 +1,21 @@
+# ExplicitKG/toc_graph.py
 import json
+import logging
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional, Any
+from log_utils import setup_stage_logger
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+LAYER_OUTPUT_DIR = SCRIPT_DIR.parent / "output" / "01_explicit_kg"
+logger = setup_stage_logger("toc_graph", LAYER_OUTPUT_DIR, console_level=logging.INFO)
 
 def extract_toc_entities_and_relations(input_path: Path, output_path: Path):
+    logger.info("TOC graph started. input=%s, output=%s", input_path.resolve(), output_path.resolve())
     # 读取 TOC 数据
     with input_path.open("r", encoding="utf-8") as f:
         toc_data = json.load(f)
+    logger.info("Loaded TOC roots=%s", len(toc_data))
 
     nodes: List[Dict[str, Any]] = []
     edges: List[Dict[str, Any]] = []
@@ -40,6 +50,8 @@ def extract_toc_entities_and_relations(input_path: Path, output_path: Path):
     with output_path.open("w", encoding="utf-8") as f:
         json.dump(graph_data, f, ensure_ascii=False, indent=2)
 
+    logger.info("TOC graph saved. nodes=%s, edges=%s, output=%s", entity_count, relation_count, output_path.resolve())
+    logger.info("TOC graph log: %s", logger.log_path)
     print(f"知识图谱文件已保存至：{output_path.resolve()}")
     print(f"生成了 {entity_count} 个实体，{relation_count} 个关系。")
 
@@ -118,14 +130,19 @@ def process_section(
 
 def main():
     # 以脚本所在目录为基准：src/ExplicitKG
-    script_dir = Path(__file__).resolve().parent
-    in_file = script_dir / "output" / "toc_with_entities_and_relations.json"
-    out_file = script_dir / "output" / "toc_graph.json"
+    script_dir = SCRIPT_DIR
+    layer_output_dir = script_dir.parent / "output" / "01_explicit_kg"
+    in_file = layer_output_dir / "03_toc_with_entities_and_relations.json"
+    out_file = layer_output_dir / "04_toc_graph.json"
 
     if not in_file.exists():
         raise FileNotFoundError(f"未找到输入文件：{in_file}")
 
-    extract_toc_entities_and_relations(in_file, out_file)
+    try:
+        extract_toc_entities_and_relations(in_file, out_file)
+    except Exception:
+        logger.exception("TOC graph failed.")
+        raise
 
 
 if __name__ == "__main__":
