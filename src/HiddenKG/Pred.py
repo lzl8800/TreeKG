@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""
+Pred.py — Tree-KG §3.3.5 边预测（挖掘隐藏关系 · 语义+结构）
+- 读取 HiddenKG/config/config.yaml 并合并 include_files（相对 config 目录解析）
+- 路径只存文件名，代码统一拼接 HiddenKG/output
+- 详细日志记录到 logs 文件夹，终端只输出必要信息
+"""
+
 from __future__ import annotations
 
 import os
@@ -48,9 +56,9 @@ PRED = _CFG["PredConfig"]
 
 # 核心路径/日志
 _HIDDEN_DIR = Path(__file__).resolve().parent
-_OUT_DIR = _HIDDEN_DIR / "output"
+_OUT_DIR = _HIDDEN_DIR.parent / "output" / "02_hidden_kg"
 _OUT_DIR.mkdir(parents=True, exist_ok=True)
-_LOG_DIR = _HIDDEN_DIR / "logs"
+_LOG_DIR = _OUT_DIR / "logs"
 _LOG_DIR.mkdir(parents=True, exist_ok=True)
 _LOG_FILE = _LOG_DIR / f"pred_{time.strftime('%Y%m%d_%H%M%S')}.log"
 
@@ -552,7 +560,12 @@ def _write_edges(out_dir: str, edges: List[Dict[str, Any]]) -> None:
 def _write_edges_to_file(out_path: str, edges: List[Dict[str, Any]]) -> None:
     with open(out_path, "w", encoding=ENCODING) as f:
         json.dump(edges, f, ensure_ascii=False, indent=2)
+    logger.debug("Saved predicted edges. output=%s, count=%s", os.path.abspath(out_path), len(edges))
 
 
 if __name__ == "__main__":
-    run_pred()
+    try:
+        run_pred()
+    except Exception:
+        logger.exception("Pred failed.")
+        raise
