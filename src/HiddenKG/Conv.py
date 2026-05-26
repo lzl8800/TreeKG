@@ -1,4 +1,20 @@
+# -*- coding: utf-8 -*-
+"""
+HiddenKG 第一步：Contextual-based Convolution（conv）
+输出：
+  - HiddenKG/output/conv_entities.json
+日志：
+  - HiddenKG/logs/conv.log  （详细）
+  - 终端：仅必要信息 + 进度条
+依赖：
+  - HiddenKG/config/config.yaml（通过 include_files 引入 config/conv.yaml）
+  - 需要 config 内含:
+      APIConfig: { API_BASE, API_KEY, MODEL_NAME, TIMEOUT_SECS(可选) }
+      ConvConfig: 见 conv.yaml
+"""
+
 from __future__ import annotations
+
 import json
 import time
 import logging
@@ -45,9 +61,10 @@ def C(key: str, default=None):
 # 目录
 hidden_dir = script_dir                                 # src/HiddenKG
 explicit_dir = script_dir.parent / "ExplicitKG"         # src/ExplicitKG
-hidden_output_dir = hidden_dir / "output"
-hidden_logs_dir = hidden_dir / "logs"
-explicit_output_dir = explicit_dir / "output"
+src_dir = script_dir.parent
+hidden_output_dir = src_dir / "output" / "02_hidden_kg"
+hidden_logs_dir = hidden_output_dir / "logs"
+explicit_output_dir = src_dir / "output" / "01_explicit_kg"
 hidden_output_dir.mkdir(parents=True, exist_ok=True)
 hidden_logs_dir.mkdir(parents=True, exist_ok=True)
 
@@ -415,9 +432,14 @@ def run_conv():
     logger.info(f"Conv 阶段完成，共处理 {len(results)} 个实体。")
     logger.info(f"输出文件: {FILE_CONV_RESULT}")
     logger.info(f"总耗时: {duration} 秒")
+    logger.info("Conv log: %s", LOG_PATH)
     print(f"✅ Conv 完成：{len(results)} 个实体，并发 {workers}，耗时 {duration} s  →  {FILE_CONV_RESULT}")
     print(f"📝 详细日志：{LOG_PATH}")
 
 # ========== CLI ==========
 if __name__ == "__main__":
-    run_conv()
+    try:
+        run_conv()
+    except Exception:
+        logger.exception("Conv failed.")
+        raise
