@@ -1,3 +1,13 @@
+# -*- coding: utf-8 -*-
+"""
+Dedup.py — Tree-KG §3.3.4 实体去重（纯 YAML 配置版）
+
+- 统一从 HiddenKG/config/config.yaml 读取主配置，并解析 include_files（相对主配置目录）
+- 所有路径只存“文件名”，在代码里统一拼到 HiddenKG/output 下
+- 优先使用 aggr 的实体；若不存在则回退到 conv 的实体
+- 结果输出为 HiddenKG/output/<RESULT_NAME>
+"""
+
 import os
 import re
 import json
@@ -12,6 +22,7 @@ from pathlib import Path
 import numpy as np
 from tqdm import tqdm
 import yaml
+from log_utils import setup_stage_logger
 
 # === 外部模块（保持不变） ===
 from Dedup.data_structures import Occurrence, Neighbor, EntityItem
@@ -97,7 +108,7 @@ def run():
     dcfg = cfg["DedupConfig"]
 
     # —— 目录与文件名 —— #
-    output_dir = script_dir / "output"
+    output_dir = script_dir.parent / "output" / "02_hidden_kg"
     output_dir.mkdir(parents=True, exist_ok=True)
 
     ent_aggr = output_dir / dcfg["ENTITIES_AGGR_NAME"]
@@ -120,12 +131,14 @@ def run():
         raise FileNotFoundError(f"未找到嵌入文件：{emb_path}")
 
     # —— 日志 —— #
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(levelname)s: %(message)s",
-        handlers=[logging.StreamHandler()]
-    )
-    logger = logging.getLogger("Dedup")
+    logger = setup_stage_logger("dedup", output_dir, console_level=logging.INFO)
+    root_logger = logging.getLogger()
+    root_logger.handlers.clear()
+    root_logger.setLevel(logging.INFO)
+    for handler in logger.handlers:
+        root_logger.addHandler(handler)
+    logger.info("Dedup started. entities_aggr=%s, entities_conv=%s, selected=%s, embeddings=%s, output=%s",
+                ent_aggr.resolve(), ent_conv.resolve(), entities_path.resolve(), emb_path.resolve(), out_path.resolve())
 
     t0 = time.time()
     logger.info("📘 [1/5] 加载实体与嵌入文件...")
@@ -411,6 +424,7 @@ def run():
     logger.info(f"实体数量变化：{len(entities)} -> {len(new_entities)}")
     logger.info(f"总耗时：{t1 - t0:.2f} 秒")
     logger.info(f"结果文件：{out_path.resolve()}")
+    logger.info("Dedup log: %s", logger.log_path)
 
 
 def main():
@@ -422,7 +436,11 @@ def main():
     args = ap.parse_args()
 
     # 现在 run() 里完全从 YAML 取；如需覆盖，可以自行改 run() 接口。
-    run()
+    try:
+        run()
+    except Exception:
+        logging.getLogger("Dedup").exception("Dedup failed.")
+        raise
 
 
 if __name__ == "__main__":
